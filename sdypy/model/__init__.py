@@ -1,2 +1,4 @@
 import pyLump as lumped
-from . import shell
+from .shell import shell
+from .tetrahedron import tet10
+from .beam import beam

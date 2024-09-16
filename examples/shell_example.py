@@ -10,7 +10,7 @@ from scipy.sparse.linalg import eigsh
 current_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(current_path)
 
-from sdypy.model.shell import *
+from sdypy.model.shell.shell import *
 
 
 # Load the mesh
