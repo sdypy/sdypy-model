@@ -20,9 +20,9 @@ sys.path.insert(0, os.path.abspath('../..'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'SDyPy project template'
-copyright = '2021, Janko Slavič, Domen Gorjup, Klemen Zaletelj'
-author = 'Janko Slavič, Domen Gorjup, Klemen Zaletelj'
+project = 'SDyPy-model'
+copyright = '2024, Klemen Zaletelj, Janko Slavič, Domen Gorjup'
+author = 'Klemen Zaletelj, Janko Slavič, Domen Gorjup'
 
 # The short X.Y version
 version = ''
@@ -108,7 +108,7 @@ html_static_path = ['_static']
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'sdypy_template_project_doc'
+htmlhelp_basename = 'sdypy_model_project_doc'
 
 
 # -- Options for LaTeX output ------------------------------------------------
@@ -135,8 +135,8 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'sdypy_template_project.tex', 'SDyPy project template project Documentation',
-     'Janko Slavič, Domen Gorjup, Klemen Zaletelj', 'manual'),
+    (master_doc, 'sdypy_model_project.tex', 'SDyPy-model project Documentation',
+     'Klemen Zaletelj, Janko Slavič, Domen Gorjup', 'manual'),
 ]
 
 
@@ -145,7 +145,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'sdypy_template_project', 'SDyPy project template Documentation',
+    (master_doc, 'sdypy_model_project', 'SDyPy-model Documentation',
      [author], 1)
 ]
 
@@ -156,8 +156,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'SDyPy project template', 'SDyPy project template Documentation',
-     author, 'SDyPy project template', 'One line description of project.',
+    (master_doc, 'SDyPy-model', 'SDyPy-model Documentation',
+     author, 'SDyPy-model', 'One line description of project.',
      'Miscellaneous'),
 ]
 

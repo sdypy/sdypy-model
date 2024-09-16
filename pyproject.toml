@@ -1,0 +1,45 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "sdypy-model"
+version = "0.0.1"
+authors = [{name = "Klemen Zaletelj et al.", email = "klemen.zaletelj@fs.uni-lj.si"}]
+maintainers = [{name = "Klemen Zaletelj et al.", email = "klemen.zaletelj@fs.uni-lj.si"}]
+license = "MIT"
+description = "System modeling, including lumped mass and FEM."
+readme = "README.rst"
+keywords = ["System model", "lumped mass", "FEM"]
+requires-python = ">=3.10"
+dependencies = [
+    "tqdm>=4.23.4",
+    "numpy>=1.14.3",
+    "scipy>=1.1.0",
+]
+classifiers = [
+    'Development Status :: 5 - Production/Stable',
+    'Intended Audience :: Developers',
+    'Topic :: Scientific/Engineering',
+    'Programming Language :: Python :: 3.10',
+    "License :: OSI Approved :: MIT License",
+]
+
+[tool.hatch.build.targets.wheel]
+include = ["sdypy"]
+
+[project.optional-dependencies]
+dev = [
+    "sphinx",
+    "twine",
+    "wheel",
+    "pytest",
+    "build",
+    "sphinx-rtd-theme",
+    "sphinx-copybutton>=0.5.2",
+]
+
+[project.urls]
+homepage = "https://github.com/sdypy/sdypy-model"
+documentation = "https://github.com/sdypy/sdypy-model"
+source = "https://github.com/sdypy/sdypy-model"
