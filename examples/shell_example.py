@@ -10,7 +10,7 @@ from scipy.sparse.linalg import eigsh
 current_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(current_path)
 
-from sdypy.model.shell.shell import *
+from sdypy.model import Shell
 
 
 # Load the mesh
@@ -34,7 +34,9 @@ rho = 7829
 mass_lumping = False
 force_nonsingularity = True
 
-K, M = MITC4_global(nodes, elements, E, nu, rho, thickness, verbose=1, mass_lumping=mass_lumping, force_nonsingularity=force_nonsingularity)
+shell_obj = Shell(nodes, elements, E, nu, rho, thickness, verbose=1, mass_lumping=mass_lumping, force_nonsingularity=force_nonsingularity)
+K = shell_obj.K
+M = shell_obj.M
 
 # Compute the first 20 modes
 eigenvalues, eigenvectors = eigsh(K, M=M, k=20, sigma=0, which='LM')

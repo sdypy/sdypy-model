@@ -81,19 +81,32 @@ def Jacobi_inv(J, J_det):
                       (J_t[:, 0, 1] * J_t[:, 1, 0])) / J_det
     return J_inv
 
-class Tet10:
+class Tetrahedron:
     def __init__(self, org, conec, Young, Density, Poisson, calc_n_freq=20, dof_mask=None, added_masses=None, mass_locations=None, org_rotation=None, lumped=False):
-        """
-        :param org: nodes
-        :param conec: elements
-        :param Young: stiffnesses of the elements
-        :param Density: density of the elements
-        :param Poisson: Poisson ratio of the material
-        :param calc_n_freq: how many natural frequency to compute
-        :param dof_mask: mask the dof that are rigidly fixated
-        :param added_masses: masses of point masses
-        :param mass_locations: locations of the point masses
-        :param org_rotation: rotation around the x, y, and z axes (in rad). This is a temporary rotation
+        """Initialize the tetrahedron model.
+
+        Parameters
+        ----------
+        org : array_like
+            Nodes.
+        conec : array_like
+            Elements.
+        Young : array_like
+            Stiffnesses of the elements.
+        Density : array_like
+            Density of the elements.
+        Poisson : array_like
+            Poisson ratio of the material.
+        calc_n_freq : int
+            How many natural frequencies to compute.
+        dof_mask : array_like
+            Mask the degrees of freedom that are rigidly fixated.
+        added_masses : array_like
+            Masses of point masses.
+        mass_locations : array_like
+            Locations of the point masses.
+        org_rotation : array_like
+            Rotation around the x, y, and z axes (in radians). This is a temporary rotation
             for rigid fixation that is not in-line with one of the axes.
         """
         self.n_dof_node = 3
@@ -152,10 +165,21 @@ class Tet10:
 
 
     def assemble_matrices_lumped(self, E, ro):
-        """Sestavljanje sproti izračunanih elementarnih matrik v globalno masno in togostno matriko.
+        """
+        Assembling the element matrices into the global mass and stiffness matrix.
         
-        Za izračun odvoda matrike po ro ali E, preprosto nastavi tisti parameter na 1. Vse ostalo izračunaš enako?
-        """                    
+        To calculate the derivative of the matrix with respect to rho or E, 
+        simply set that parameter to 1. Everything else is calculated the same way.
+        
+        Parameters
+        ----------
+        rho : float or array_like
+            Density of the elements.
+        E : float or array_like
+            Young's modulus (stiffness) of the elements.
+        n_el : int
+            Number of elements.
+        """
         Kg = np.zeros((self.n_el * self.n_dof_element**2))
         Mg = np.zeros_like(Kg)
 
@@ -217,10 +241,20 @@ class Tet10:
 
 
     def assemble_matrices(self, E, ro):
-        """Sestavljanje sproti izračunanih elementarnih matrik v globalno masno in togostno matriko.
+        """
+        Assembling the element matrices into the global mass and stiffness matrix.
         
-        Za izračun odvoda matrike po ro ali E, preprosto nastavi tisti parameter na 1. Vse ostalo izračunaš enako?
-        """                    
+        To calculate the derivative of the matrix with respect to rho or E, simply set that parameter to 1. Everything else is calculated the same way.
+        
+        Parameters
+        ----------
+        rho : float or array_like
+            Density of the elements.
+        E : float or array_like
+            Young's modulus (stiffness) of the elements.
+        n_el : int
+            Number of elements.
+        """
         Kg = np.zeros((self.n_el * self.n_dof_element**2))
         Mg = np.zeros_like(Kg)
 
@@ -281,9 +315,13 @@ class Tet10:
         return K, M
     
     def solve(self):
-        """Solve eigen problem.
+        """
+        Solve the eigenvalue problem.
         
-        :param dof_mask: DOF that are not fixed. If none, the body is free-free.
+        Parameters
+        ----------
+        dof_mask : array_like, optional
+            Degrees of freedom that are not fixed. If None, the body is free-free.
         """
         self.eigval, self.eigvec = eigsh(self.K, M=self.M, k=self.calc_n_freq, sigma=0, which='LM')
 

@@ -9,7 +9,7 @@ from scipy.sparse.linalg import eigsh
 current_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(current_path)
 
-from sdypy.model.tetrahedron.tet10 import *
+from sdypy.model import Tetrahedron
 
 def pad_facets(facets):
     return np.hstack((np.ones((facets.shape[0], 1))*facets.shape[1], facets)).astype(int)
@@ -53,7 +53,7 @@ parameters = {
     'Poisson': 0.3
 }
 
-tet_obj = Tet10(org, conec, parameters['Young'], parameters['Density'], parameters['Poisson'], 60)
+tet_obj = Tetrahedron(org, conec, parameters['Young'], parameters['Density'], parameters['Poisson'], 60)
 
 # Solve the eigenvalue problem
 eigenvalues, eigenvectors = eigsh(tet_obj.K, M=tet_obj.M, k=20, sigma=0, which='LM')

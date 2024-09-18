@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 current_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(current_path)
 
-from sdypy.model.beam.beam import *
+from sdypy.model import Beam
 
 
 n_elements = 20
