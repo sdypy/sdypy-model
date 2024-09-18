@@ -120,7 +120,8 @@ class Beam:
         self.loce = self.loce.reshape(
             self.conec.shape[0], self.n_dof_node * self.el_nodes)
 
-    def assemble(self):
+    def assemble(self, mode="EB"):
+        """Assemble mass and stiffness matrices."""
         # self.Ms = np.zeros((self.n_elements, self.n_dof, self.n_dof))
         # self.Ks = np.zeros((self.n_elements, self.n_dof, self.n_dof))
 
@@ -128,8 +129,10 @@ class Beam:
         self.K = np.zeros((self.n_dof, self.n_dof))
 
         self.Ms1 = matrices_m_e(self.length, self.mass)
-        # self.Ks1 = matrices_k_e(self.length, self.EI)
-        self.Ks1 = matrices_k_e_timoshenko(self.length, self.Young, self.I, self.area)
+        if mode == "EB":
+            self.Ks1 = matrices_k_e(self.length, self.EI)
+        elif mode == "Timoshenko":
+            self.Ks1 = matrices_k_e_timoshenko(self.length, self.Young, self.I, self.area)
 
         for i in range(self.n_elements):
             # self.Ms[i][np.ix_(self.loce[i], self.loce[i])] = self.Ms1[:, :, i]

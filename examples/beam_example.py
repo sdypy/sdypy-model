@@ -1,6 +1,7 @@
 import os
 import sys
 import numpy as np
+import matplotlib.pyplot as plt
 
 current_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(current_path)
@@ -8,7 +9,7 @@ sys.path.append(current_path)
 from sdypy.model.beam.beam import *
 
 
-n_elements = 10
+n_elements = 20
 beam_length = 500 # mm
 beam_ro = 7850 * 1e-12
 beam_Young = 180 * 1e3
@@ -29,3 +30,10 @@ beam_obj = Beam(org=None, conec=None,
 nat_freq, vec = beam_obj.solve()
 
 print(nat_freq)
+
+fig, axs = plt.subplots(3, 2, figsize=(10, 7))
+for i in range(6):
+    axs.flatten()[i].plot(vec[::2, i])
+    axs.flatten()[i].set_title(f'Mode {i+1} ({nat_freq[i]:.2f} Hz)')
+plt.tight_layout()
+plt.show()
