@@ -616,16 +616,16 @@ class Shell:
         # Construct the global stiffness and mass matrices
         self.construct_global_matrices()
 
-    def construct_MITC4_matrices_for_element(self, nodes_el):
+    def construct_MITC4_matrices_for_element(self, nodes_el, el):
         """The computation of stiffness and mass matrices for each element.
         
         Using the MITC4 elements. The code is based on the MatLab code and on the
         Finite Element Procedures book by Bathe.
         """
-        E = self.E
-        nu = self.nu
-        rho = self.rho
-        thickness = self.thickness
+        E = self.E[el]
+        nu = self.nu[el]
+        rho = self.rho[el]
+        thickness = self.thickness[el]
 
         # Calculate normal at each node
         Vn, V1, V2 = get_normal_vector(nodes_el)
@@ -801,7 +801,8 @@ class Shell:
             nodes_el = self.nodes[element]
             
             # Get the element stiffness and mass matrix
-            K_el, M_el, data_dict = MITC4_element(self.E[el], self.nu[el], self.rho[el], self.thickness[el], nodes_el)
+            # K_el, M_el, data_dict = MITC4_element(self.E[el], self.nu[el], self.rho[el], self.thickness[el], nodes_el)
+            K_el, M_el, data_dict = self.construct_MITC4_matrices_for_element(nodes_el, el)
             
             # Extract normal and orthogonal vectors
             V1 = data_dict["V1"]
