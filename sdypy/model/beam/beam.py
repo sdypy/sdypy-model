@@ -66,14 +66,24 @@ class Beam:
     def __init__(self, org, conec, length, width, height, density, Young, n_nodes=None, added_masses=None, mass_locations=None):
         """
         
-        :param org: organization matrix
-        :param conec: conectivity matrix
-        :param length: array like, lengths of the beam elements
-        :param width: width of the beam
-        :param height: height of the beam
-        :param mass: array like, masses of the beam elements
-        :param Young: array like, Young modulus of each beam
-        :n_nodes: number of nodes to construct org and conec if not given
+        Parameters
+        ----------
+        org : array_like
+            Organization matrix.
+        conec : array_like
+            Connectivity matrix.
+        length : array_like
+            Lengths of the beam elements.
+        width : float
+            Width of the beam.
+        height : float
+            Height of the beam.
+        mass : array_like
+            Masses of the beam elements.
+        Young : array_like
+            Young's modulus of each beam.
+        n_nodes : int, optional
+            Number of nodes to construct org and conec if not given.
         """
         if org is None and n_nodes is not None:
             org = np.linspace(0, np.sum(length), n_nodes)
@@ -121,7 +131,15 @@ class Beam:
             self.conec.shape[0], self.n_dof_node * self.el_nodes)
 
     def assemble(self, mode="EB"):
-        """Assemble mass and stiffness matrices."""
+        """Assemble mass and stiffness matrices.
+
+        Parameters
+        ----------
+        mode : str, optional
+        The mode of assembly. Default is "EB".
+         - "EB": Euler-Bernoulli beam theory.
+         - "T": Timoshenko beam theory.
+        """
         # self.Ms = np.zeros((self.n_elements, self.n_dof, self.n_dof))
         # self.Ks = np.zeros((self.n_elements, self.n_dof, self.n_dof))
 
