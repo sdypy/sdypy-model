@@ -21,6 +21,7 @@ dependencies = [
     "pyvistaqt",
     "pyqt5",
     "meshio",
+    "gmsh",
 ]
 classifiers = [
     'Development Status :: 5 - Production/Stable',
