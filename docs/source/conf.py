@@ -25,7 +25,7 @@ copyright = '2024, Klemen Zaletelj, Janko Slavič, Domen Gorjup'
 author = 'Klemen Zaletelj, Janko Slavič, Domen Gorjup'
 
 # The short X.Y version
-version = ''
+version = '0.1'
 # The full version, including alpha/beta/rc tags
 release = '0.1.0'
 
@@ -41,12 +41,25 @@ release = '0.1.0'
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx.ext.mathjax',
+    'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
-    # Copy button in code cells
+    'sphinx.ext.githubpages',
+    'myst_parser',
     'sphinx_copybutton',
-    # Add support for the Google docstring format
-    'sphinx.ext.napoleon', 
 ]
+
+# Defined here: https://sphinx-copybutton.readthedocs.io/en/latest/use.html#using-regexp-prompt-identifiers (the >>> are not copied)
+copybutton_prompt_text = r">>> |\.\.\. |\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: "
+copybutton_prompt_is_regexp = True
+
+autodoc_default_options = {
+    'members': True,
+    'private-members': True,
+    'special-members': '__init__',
+    'member-order': 'bysource',
+    'show-inheritance': None,
+}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -54,8 +67,7 @@ templates_path = ['_templates']
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
 #
-# source_suffix = ['.rst', '.md']
-source_suffix = '.rst'
+source_suffix = {'.rst': 'restructuredtext', '.md': 'restructuredtext'}
 
 # The master toctree document.
 master_doc = 'index'
@@ -65,7 +77,7 @@ master_doc = 'index'
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = "English"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -81,13 +93,18 @@ pygments_style = None
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'alabaster'
+html_theme = 'sphinx_book_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
-# html_theme_options = {}
+html_theme_options = {
+    "repository_branch": "master",
+    "navigation_with_keys": True,
+    "repository_url": "https://github.com/sdypy/sdypy-model",
+    "use_repository_button": True,
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -116,19 +133,19 @@ htmlhelp_basename = 'sdypy_model_project_doc'
 latex_elements = {
     # The paper size ('letterpaper' or 'a4paper').
     #
-    # 'papersize': 'letterpaper',
+    'papersize': 'a4paper',
 
     # The font size ('10pt', '11pt' or '12pt').
     #
-    # 'pointsize': '10pt',
+    'pointsize': '10pt',
 
     # Additional stuff for the LaTeX preamble.
     #
-    # 'preamble': '',
+    'preamble': '',
 
     # Latex figure (float) alignment
     #
-    # 'figure_align': 'htbp',
+    'figure_align': 'htbp',
 }
 
 # Grouping the document tree into LaTeX files. List of tuples
@@ -181,3 +198,10 @@ epub_exclude_files = ['search.html']
 
 
 # -- Extension configuration -------------------------------------------------
+
+# -- Configuration for MyST parser (markdown in sphinx) ----------------------
+# see https://myst-parser.readthedocs.io/en/latest/ for more information
+myst_enable_extensions = [
+    "dollarmath",  # For LaTeX-style math in Markdown
+    "colon_fence", # For block directives using `::`
+]

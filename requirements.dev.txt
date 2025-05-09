@@ -4,4 +4,6 @@ sphinx
 twine
 wheel
 pytest
-sphinx-rtd-theme
+myst-parser
+sphinx-book-theme
+sphinx-copybutton

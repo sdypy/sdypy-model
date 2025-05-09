@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "sdypy-model"
-version = "0.0.1"
+version = "0.1.0"
 authors = [{name = "Klemen Zaletelj et al.", email = "klemen.zaletelj@fs.uni-lj.si"}]
 maintainers = [{name = "Klemen Zaletelj et al.", email = "klemen.zaletelj@fs.uni-lj.si"}]
 license = "MIT"
@@ -41,8 +41,9 @@ dev = [
     "wheel",
     "pytest",
     "build",
-    "sphinx-rtd-theme",
+    "sphinx-book-theme",
     "sphinx-copybutton>=0.5.2",
+    "myst-parser"
 ]
 
 [project.urls]
