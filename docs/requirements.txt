@@ -1,3 +1,4 @@
 sdypy-model
 sphinx-book-theme
 sphinx-copybutton
+myst-parser
