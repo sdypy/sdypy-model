@@ -9,7 +9,7 @@ authors = [{name = "Klemen Zaletelj et al.", email = "klemen.zaletelj@fs.uni-lj.
 maintainers = [{name = "Klemen Zaletelj et al.", email = "klemen.zaletelj@fs.uni-lj.si"}]
 license = "MIT"
 description = "System modeling, including lumped mass and FEM."
-readme = "README.rst"
+readme = "README.md"
 keywords = ["System model", "lumped mass", "FEM"]
 requires-python = ">=3.10"
 dependencies = [
