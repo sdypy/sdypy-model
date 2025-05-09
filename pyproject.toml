@@ -22,6 +22,7 @@ dependencies = [
     "pyqt5",
     "meshio",
     "gmsh",
+    "pyLump",
 ]
 classifiers = [
     'Development Status :: 5 - Production/Stable',
