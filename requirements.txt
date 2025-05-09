@@ -4,4 +4,9 @@ scipy>=1.2.0
 matplotlib>=3.0.0
 tqdm>=4.25.0
 sphinx-copybutton>=0.5.2
-pyLump
+pylump
+pyvista
+pyvistaqt
+pyqt5
+meshio
+gmsh
