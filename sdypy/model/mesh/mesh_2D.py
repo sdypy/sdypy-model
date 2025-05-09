@@ -1,5 +1,4 @@
 import os
-import gmsh
 import numpy as np
 import pyvista as pv
 from pyvistaqt import BackgroundPlotter
@@ -25,6 +24,7 @@ def generate_quadrilateral_mesh(path_to_step, element_size, path_to_mesh=None, s
     elements : np.ndarray
         Element connectivity.
     """
+    import gmsh
     model_name = os.path.basename(path_to_step).split(".")[0]
 
     # Initialize GMSH
