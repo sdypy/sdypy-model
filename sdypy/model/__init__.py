@@ -1,4 +1,4 @@
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 
 import pyLump as lumped
 from .shell.shell import Shell
