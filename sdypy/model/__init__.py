@@ -1,3 +1,5 @@
+__version__ = "0.1.1"
+
 import pyLump as lumped
 from .shell.shell import Shell
 from .tetrahedron.tet10 import Tetrahedron
