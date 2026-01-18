@@ -63,7 +63,8 @@ def matrices_k_e(l, EI):
 
 
 class Beam:
-    def __init__(self, org, conec, length, width, height, density, Young, n_nodes=None, added_masses=None, mass_locations=None):
+    def __init__(self, org, conec, length, width, height, density, Young, n_nodes=None, added_masses=None, mass_locations=None,
+                mode='EB'):
         """
         
         Parameters
@@ -84,6 +85,10 @@ class Beam:
             Young's modulus of each beam.
         n_nodes : int, optional
             Number of nodes to construct org and conec if not given.
+        mode : str, optional
+            The mode of assembly. Default is "EB".
+             - "EB": Euler-Bernoulli beam theory.
+             - "T": Timoshenko beam theory.
         """
         if org is None and n_nodes is not None:
             org = np.linspace(0, np.sum(length), n_nodes)
@@ -111,7 +116,7 @@ class Beam:
         self.mass_locations = mass_locations
 
         self.construct_loce()
-        self.assemble()
+        self.assemble(mode=mode)
 
         if self.added_masses is not None and self.mass_locations is not None:
             self.add_mass()
