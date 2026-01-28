@@ -5,6 +5,7 @@ import meshio
 from pyvistaqt import BackgroundPlotter
 import pyvista as pv
 from scipy.sparse.linalg import eigsh
+# os.environ['QT_QPA_PLATFORM'] = 'xcb' # if you run wayland and pyqt6, uncomment this
 
 current_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(current_path)
@@ -15,9 +16,12 @@ def pad_facets(facets):
     return np.hstack((np.ones((facets.shape[0], 1))*facets.shape[1], facets)).astype(int)
 
 # Load mesh
-path_mesh = 'data/Beam - simple.msh'
-
-mesh = meshio.read(path_mesh)
+try:
+    path_mesh = 'data/Beam - simple.msh'
+    mesh = meshio.read(path_mesh)
+except:
+    path_mesh = 'examples/data/Beam - simple.msh'
+    mesh = meshio.read(path_mesh)
 
 org = mesh.points
 org_orig = np.copy(org)
@@ -107,4 +111,5 @@ for ii in range(int(rows*cols)):
 
 # Show the plotter with all subplots
 plotter.show()
+input("Press any key to exit.")
 # %%

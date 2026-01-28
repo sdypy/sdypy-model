@@ -19,7 +19,6 @@ dependencies = [
     "pylump",
     "pyvista",
     "pyvistaqt",
-    "pyqt5",
     "meshio",
     "gmsh",
 ]
@@ -44,6 +43,10 @@ dev = [
     "sphinx-book-theme",
     "sphinx-copybutton>=0.5.2",
     "myst-parser"
+]
+
+qt = [
+  "pyqt6"
 ]
 
 [project.urls]
