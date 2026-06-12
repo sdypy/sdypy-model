@@ -1,5 +1,5 @@
 import numpy as np
-from tqdm.notebook import tqdm
+from tqdm.auto import tqdm
 
 from .quadrature import (standard_triangle_quad, 
                          duffy_rule, 

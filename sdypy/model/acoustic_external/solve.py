@@ -8,7 +8,7 @@ from .quadrature import (standard_triangle_quad,
 from .matrix_assembly import ContinuousAssembler, DiscontinuousAssembler
 from .elements import ContinuousP1Mesh, DiscontinuousP1Mesh
 
-from tqdm.notebook import tqdm
+from tqdm.auto import tqdm
 
 
 class BEMSolver:

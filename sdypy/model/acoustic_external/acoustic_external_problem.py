@@ -12,7 +12,7 @@ from __future__ import annotations
 import numpy as np
 import pyvista as pv
 
-from . import Body, Field
+from .geometry import Body, Field
 from .mesh import Mesh
 from .elements import ContinuousP1Mesh, DiscontinuousP1Mesh
 from .integrators import ElementIntegratorCollocation
