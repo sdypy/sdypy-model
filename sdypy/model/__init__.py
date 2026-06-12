@@ -12,3 +12,8 @@ from .beam.beam import Beam
 from .eigenvalue_solution import solve_eigenvalue
 
 from . import mesh
+
+# beam, shell, tetrahedron, eigenvalue_solution remain accessible as module
+# attributes (they are registered as submodule references by the imports above)
+# but are intentionally excluded from the curated public surface.
+__all__ = ["Beam", "Shell", "Tetrahedron", "solve_eigenvalue", "lumped", "mesh"]

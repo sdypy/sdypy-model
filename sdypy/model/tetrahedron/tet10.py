@@ -82,7 +82,8 @@ def Jacobi_inv(J, J_det):
     return J_inv
 
 class Tetrahedron:
-    def __init__(self, org, conec, Young, Density, Poisson, calc_n_freq=20, dof_mask=None, added_masses=None, mass_locations=None, org_rotation=None, lumped=False):
+    def __init__(self, org, conec, young_modulus, density, poisson_ratio, calc_n_freq=20, dof_mask=None, added_masses=None, mass_locations=None, org_rotation=None, lumped=False,
+                 *, Young=None, Density=None, Poisson=None):
         """Initialize the tetrahedron model.
 
         Parameters
@@ -91,11 +92,11 @@ class Tetrahedron:
             Nodes.
         conec : array_like
             Elements.
-        Young : array_like
+        young_modulus : array_like
             Stiffnesses of the elements.
-        Density : array_like
+        density : array_like
             Density of the elements.
-        Poisson : array_like
+        poisson_ratio : array_like
             Poisson ratio of the material.
         calc_n_freq : int
             How many natural frequencies to compute.
@@ -108,13 +109,57 @@ class Tetrahedron:
         org_rotation : array_like
             Rotation around the x, y, and z axes (in radians). This is a temporary rotation
             for rigid fixation that is not in-line with one of the axes.
+
+        Deprecated parameters
+        ---------------------
+        Young : use young_modulus instead.
+        Density : use density instead.
+        Poisson : use poisson_ratio instead.
         """
+        import warnings
+        if Young is not None:
+            if young_modulus is not None:
+                raise TypeError(
+                    "Cannot pass both 'young_modulus' and deprecated 'Young'. "
+                    "Use 'young_modulus' only."
+                )
+            warnings.warn(
+                "Young is deprecated; use young_modulus instead",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            young_modulus = Young
+        if Density is not None:
+            if density is not None:
+                raise TypeError(
+                    "Cannot pass both 'density' and deprecated 'Density'. "
+                    "Use 'density' only."
+                )
+            warnings.warn(
+                "Density is deprecated; use density instead",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            density = Density
+        if Poisson is not None:
+            if poisson_ratio is not None:
+                raise TypeError(
+                    "Cannot pass both 'poisson_ratio' and deprecated 'Poisson'. "
+                    "Use 'poisson_ratio' only."
+                )
+            warnings.warn(
+                "Poisson is deprecated; use poisson_ratio instead",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            poisson_ratio = Poisson
+
         self.n_dof_node = 3
         self.calc_n_freq = calc_n_freq
-        
-        self.ro = Density
-        self.E = Young
-        self.nu = Poisson
+
+        self.ro = density
+        self.young_modulus = young_modulus
+        self.poisson_ratio = poisson_ratio
         self.org = org
         self.conec = conec
         self.loce = construct_loce(org, conec, self.n_dof_node)
@@ -134,15 +179,15 @@ class Tetrahedron:
         self.Jg = np.repeat(self.loce.flatten(), self.n_dof_element)
         self.Ig = np.tile(self.loce, self.n_dof_element).flatten()
         
-        if type(self.E) in [float, int, np.float64]:
-            self.E = np.repeat(self.E, self.n_el)
+        if type(self.young_modulus) in [float, int, np.float64]:
+            self.young_modulus = np.repeat(self.young_modulus, self.n_el)
         if type(self.ro) in [float, int, np.float64]:
             self.ro = np.repeat(self.ro, self.n_el)
 
         if lumped:
-            self.K, self.M = self.assemble_matrices_lumped(self.E, self.ro)
+            self.K, self.M = self.assemble_matrices_lumped(self.young_modulus, self.ro)
         else:
-            self.K, self.M = self.assemble_matrices(self.E, self.ro)
+            self.K, self.M = self.assemble_matrices(self.young_modulus, self.ro)
 
         if self.org_rotation is not None:
             pass
@@ -184,7 +229,7 @@ class Tetrahedron:
         Mg = np.zeros_like(Kg)
 
         # Assemble H matrix
-        H = H_matrix(E, self.nu)
+        H = H_matrix(E, self.poisson_ratio)
 
         # Gauss quadrature locations and weights
         loc1 = 0.58541020
@@ -259,7 +304,7 @@ class Tetrahedron:
         Mg = np.zeros_like(Kg)
 
         # Assemble H matrix
-        H = H_matrix(E, self.nu)
+        H = H_matrix(E, self.poisson_ratio)
 
         # Gauss quadrature locations and weights
         loc1 = 0.58541020
@@ -347,7 +392,7 @@ class Tetrahedron:
         
     def matrix_derivative(self, derivative_E_ind=None, derivative_ro_ind=None, diff_step=1e-5):
         if derivative_E_ind is not None:
-            E = self.E.copy()
+            E = self.young_modulus.copy()
             step = np.mean(E[derivative_E_ind] * diff_step)
             
             E[derivative_E_ind] = E[derivative_E_ind] + step
@@ -363,7 +408,7 @@ class Tetrahedron:
             
             ro[derivative_ro_ind] = ro[derivative_ro_ind] + step
             
-            K_, M_ = self.assemble_matrices(self.E, ro)
+            K_, M_ = self.assemble_matrices(self.young_modulus, ro)
             
             self.M_diff = (M_ - self.M) / step
             self.K_diff = sparse.csc_matrix(self.M_diff.shape)

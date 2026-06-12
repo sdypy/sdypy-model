@@ -63,10 +63,10 @@ def matrices_k_e(l, EI):
 
 
 class Beam:
-    def __init__(self, org, conec, length, width, height, density, Young, n_nodes=None, added_masses=None, mass_locations=None,
-                mode='EB'):
+    def __init__(self, org, conec, length, width, height, density, young_modulus, n_nodes=None, added_masses=None, mass_locations=None,
+                mode='EB', *, Young=None):
         """
-        
+
         Parameters
         ----------
         org : array_like
@@ -79,9 +79,9 @@ class Beam:
             Width of the beam.
         height : float
             Height of the beam.
-        mass : array_like
-            Masses of the beam elements.
-        Young : array_like
+        density : array_like
+            Density of the beam elements.
+        young_modulus : array_like
             Young's modulus of each beam.
         n_nodes : int, optional
             Number of nodes to construct org and conec if not given.
@@ -89,11 +89,29 @@ class Beam:
             The mode of assembly. Default is "EB".
              - "EB": Euler-Bernoulli beam theory.
              - "T": Timoshenko beam theory.
+
+        Deprecated parameters
+        ---------------------
+        Young : use young_modulus instead.
         """
+        import warnings
+        if Young is not None:
+            if young_modulus is not None:
+                raise TypeError(
+                    "Cannot pass both 'young_modulus' and deprecated 'Young'. "
+                    "Use 'young_modulus' only."
+                )
+            warnings.warn(
+                "Young is deprecated; use young_modulus instead",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            young_modulus = Young
+
         if org is None and n_nodes is not None:
             org = np.linspace(0, np.sum(length), n_nodes)
             conec = np.array([[i, i+1] for i in range(org.shape[0]-1)])
-        
+
         self.org = org
         self.conec = conec
 
@@ -106,11 +124,11 @@ class Beam:
         self.width = width
         self.height = height
         self.mass = width * height * np.array(length) * np.array(density)
-        self.Young = Young
+        self.young_modulus = young_modulus
         self.area = self.width*self.height
 
         self.I = (self.height**3*self.width)/12
-        self.EI = np.array(self.Young) * self.I
+        self.EI = np.array(self.young_modulus) * self.I
 
         self.added_masses = added_masses
         self.mass_locations = mass_locations
@@ -155,7 +173,7 @@ class Beam:
         if mode == "EB":
             self.Ks1 = matrices_k_e(self.length, self.EI)
         elif mode == "Timoshenko":
-            self.Ks1 = matrices_k_e_timoshenko(self.length, self.Young, self.I, self.area)
+            self.Ks1 = matrices_k_e_timoshenko(self.length, self.young_modulus, self.I, self.area)
 
         for i in range(self.n_elements):
             # self.Ms[i][np.ix_(self.loce[i], self.loce[i])] = self.Ms1[:, :, i]
