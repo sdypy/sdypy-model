@@ -1,5 +1,5 @@
 import numpy as np
-from acoustic_BEM.geometry import Body, Field
+from .geometry import Body, Field
 
 class Mesh:
     def __init__(self,

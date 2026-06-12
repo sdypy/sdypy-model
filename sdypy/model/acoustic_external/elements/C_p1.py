@@ -6,7 +6,7 @@ interface with the discontinuous element implementation.
 """
 
 import numpy as np
-from acoustic_BEM.mesh import Mesh as BaseMesh
+from ..mesh import Mesh as BaseMesh
 
 
 class ContinuousP1Mesh:

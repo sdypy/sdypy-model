@@ -7,7 +7,7 @@ and the Burton-Miller formulation on complex geometries.
 """
 
 import numpy as np
-from acoustic_BEM.mesh import Mesh as BaseMesh
+from ..mesh import Mesh as BaseMesh
 
 
 class DiscontinuousP1Mesh:

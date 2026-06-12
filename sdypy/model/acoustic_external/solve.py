@@ -1,12 +1,12 @@
 import numpy as np
 
-from acoustic_BEM.kernels import (G, dG_dn_y, 
-                                  dG_dr, r_vec)
-from acoustic_BEM.quadrature import (standard_triangle_quad, 
-                               map_to_physical_triangle_batch,
-                               shape_functions_P1)
-from acoustic_BEM.matrix_assembly import ContinuousAssembler, DiscontinuousAssembler
-from acoustic_BEM.elements import ContinuousP1Mesh, DiscontinuousP1Mesh
+from .kernels import (G, dG_dn_y, 
+                      dG_dr, r_vec)
+from .quadrature import (standard_triangle_quad, 
+                         map_to_physical_triangle_batch,
+                         shape_functions_P1)
+from .matrix_assembly import ContinuousAssembler, DiscontinuousAssembler
+from .elements import ContinuousP1Mesh, DiscontinuousP1Mesh
 
 from tqdm.notebook import tqdm
 

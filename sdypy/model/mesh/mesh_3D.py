@@ -32,7 +32,7 @@ import numpy as np
 import pyvista as pv
 from scipy.spatial import cKDTree
 from collections import defaultdict
-from typing import Any
+from typing import Any, Sequence
 
 
 # ============================================================================
@@ -175,6 +175,126 @@ class Mesh3D:
         if triangulate:
             raw = raw.triangulate(inplace=False)
         return cls.from_poly_data(raw)
+
+    @classmethod
+    def from_obj_with_transform(
+        cls,
+        path: str,
+        transform_path: str,
+        scale_to_mm: float = 1.0,
+        clean: bool = True,
+        merge_tol: float = 1e-5,
+        triangulate: bool = True,
+    ) -> Mesh3D:
+        """Load an OBJ and apply a Structure-from-Motion (SfM) coordinate
+        transform loaded from a ``.npz`` file.
+
+        The transform file must contain the keys:
+
+        - ``s`` : scalar scale factor
+        - ``R`` : rotation matrix, shape ``(3, 3)``
+        - ``obj_orig`` : origin (centroid) of the object in OBJ coordinates
+        - ``obj_mod`` : target offset in world coordinates
+
+        The transform applied to each vertex is::
+
+            x' = s * R @ (x - obj_orig) + obj_mod
+
+        and optionally multiplied by *scale_to_mm* to convert units.
+
+        Parameters
+        ----------
+        path : str
+            Path to the ``.obj`` file.
+        transform_path : str
+            Path to the ``.npz`` file containing the transform arrays.
+        scale_to_mm : float, optional
+            Additional scaling factor to apply after the transform.
+            Set to ``1000`` to convert from metres to millimetres
+            (default ``1.0``).
+        clean : bool
+            Whether to merge duplicate points (default ``True``).
+        merge_tol : float
+            Tolerance for point merging (default ``1e-5``).
+        triangulate : bool
+            Whether to convert non-triangular faces (default ``True``).
+
+        Returns
+        -------
+        Mesh3D
+        """
+        raw = pv.read(path)
+        if clean:
+            raw = raw.clean(
+                point_merging=True,
+                merge_tol=merge_tol,
+                lines_to_points=False,
+                polys_to_lines=False,
+                strips_to_polys=False,
+                inplace=False,
+                absolute=False,
+            )
+        if triangulate:
+            raw = raw.triangulate(inplace=False)
+
+        _T = np.load(transform_path)
+        s = float(_T["s"])
+        R = _T["R"]          # (3, 3)
+        obj_orig = _T["obj_orig"]   # (3,)
+        obj_mod = _T["obj_mod"]     # (3,)
+
+        points = raw.points.copy()
+        points = s * (R @ (points - obj_orig).T).T + obj_mod
+        points = points * scale_to_mm
+
+        faces_arr = raw.faces.reshape(-1, 4)[:, 1:]  # (M, 3)
+        return cls(points, faces_arr.copy())
+
+    # ------------------------------------------------------------------
+    # Geometric transform
+    # ------------------------------------------------------------------
+
+    def transform(
+        self,
+        s: float = 1.0,
+        R: np.ndarray | None = None,
+        obj_orig: np.ndarray | None = None,
+        obj_mod: np.ndarray | None = None,
+        scale_to_mm: float = 1.0,
+    ) -> Mesh3D:
+        """Return a new mesh with a rigid similarity transform applied.
+
+        The transform applied to each vertex is::
+
+            x' = scale_to_mm * (s * R @ (x - obj_orig) + obj_mod)
+
+        Parameters
+        ----------
+        s : float, optional
+            Uniform scale factor (default ``1.0``).
+        R : ndarray of shape ``(3, 3)`` or None
+            Rotation matrix.  If *None*, identity is used.
+        obj_orig : ndarray of shape ``(3,)`` or None
+            Origin offset subtracted before rotation.  If *None*, ``(0, 0, 0)``.
+        obj_mod : ndarray of shape ``(3,)`` or None
+            Translation added after rotation.  If *None*, ``(0, 0, 0)``.
+        scale_to_mm : float, optional
+            Final unit scaling (default ``1.0``).  Set to ``1000`` to
+            convert from metres to millimetres.
+
+        Returns
+        -------
+        Mesh3D
+        """
+        R_mat = np.eye(3) if R is None else np.asarray(R, dtype=float)
+        orig = np.zeros(3) if obj_orig is None else np.asarray(obj_orig, dtype=float)
+        mod = np.zeros(3) if obj_mod is None else np.asarray(obj_mod, dtype=float)
+
+        points = self._points.copy()
+        points = float(s) * (R_mat @ (points - orig).T).T + mod
+        points = points * float(scale_to_mm)
+
+        return Mesh3D(points, self._faces.copy())
 
     # ------------------------------------------------------------------
     # Conversion to / from pyvista

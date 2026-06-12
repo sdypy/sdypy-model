@@ -1,16 +1,16 @@
 import numpy as np
 from tqdm.notebook import tqdm
 
-from acoustic_BEM.quadrature import (standard_triangle_quad, 
-                               duffy_rule, 
-                               telles_rule,
-                               barycentric_projection,
-                               shape_functions_P1,
-                               map_to_physical_triangle_batch)
+from .quadrature import (standard_triangle_quad, 
+                         duffy_rule, 
+                         telles_rule,
+                         barycentric_projection,
+                         shape_functions_P1,
+                         map_to_physical_triangle_batch)
 
-from acoustic_BEM.mesh import Mesh
-from acoustic_BEM.elements import ContinuousP1Mesh, DiscontinuousP1Mesh
-from acoustic_BEM.integrators import ElementIntegratorCollocation
+from .mesh import Mesh
+from .elements import ContinuousP1Mesh, DiscontinuousP1Mesh
+from .integrators import ElementIntegratorCollocation
 
 
 class _CollocationCache:
