@@ -33,34 +33,54 @@ dependencies = [
     "gmsh",
 ]
 classifiers = [
-    "Development Status :: 5 - Production/Stable",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering",
-    "Programming Language :: Python :: 3.10",
     "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
 ]
 
 [project.optional-dependencies]
-dev = [
+qt = [
+    "pyqt6",
+]
+docs = [
     "sphinx",
-    "twine",
-    "wheel",
-    "pytest",
-    "build",
     "sphinx-book-theme",
     "sphinx-copybutton>=0.5.2",
     "myst-parser",
 ]
-qt = [
-    "pyqt6",
+dev = [
+    "sdypy-model[docs]",
+    "twine",
+    "wheel",
+    "pytest",
+    "build",
+    "flake8",
 ]
 
 [project.urls]
-homepage = "https://github.com/sdypy/sdypy-model"
-documentation = "https://github.com/sdypy/sdypy-model"
-source = "https://github.com/sdypy/sdypy-model"
+Homepage = "https://github.com/sdypy/sdypy-model"
+Source = "https://github.com/sdypy/sdypy-model"
 
 [tool.hatch.build.targets.wheel]
+packages = ["sdypy"]
+
+[tool.hatch.build.targets.sdist]
 include = [
-    "sdypy",
+    "sdypy/",
+    "tests/",
+    "docs/",
+    "README.md",
+    "License",
+    "pyproject.toml",
+    "readthedocs.yaml",
+    "CONTRIBUTING.rst",
+]
+exclude = [
+    "docs/_build/",
+    "docs/build/",
 ]

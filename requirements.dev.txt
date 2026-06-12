@@ -1,9 +1,0 @@
-# Package requirements for developers
--r requirements.txt
-sphinx
-twine
-wheel
-pytest
-myst-parser
-sphinx-book-theme
-sphinx-copybutton
