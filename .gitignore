@@ -107,3 +107,6 @@ venv.bak/
 
 # VSCode
 .vscode/
+
+#claude.md
+CLAUDE.md

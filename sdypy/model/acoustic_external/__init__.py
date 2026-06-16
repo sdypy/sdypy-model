@@ -16,8 +16,7 @@ from .kernels import (r_vec, G, dG_dr,
                           d2G_dn_x_dn_y)
 
 __all__ = ["Mesh", "BEMSolver", "AcousticExternalProblem",
-            "CollocationAssembler", 
+            "CollocationAssembler",
             "ElementIntegratorCollocation",
             "ContinuousP1Mesh", "DiscontinuousP1Mesh",
             "Body", "Field", "box_mesh",]
-__version__ = "0.0.0"
