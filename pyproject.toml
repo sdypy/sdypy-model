@@ -15,7 +15,7 @@ maintainers = [
 ]
 license = "MIT"
 description = "System modeling, including lumped mass and FEM."
-readme = "README.md"
+readme = "README.rst"
 keywords = [
     "System model",
     "lumped mass",
@@ -49,9 +49,8 @@ qt = [
 ]
 docs = [
     "sphinx",
-    "sphinx-book-theme",
+    "pydata-sphinx-theme",
     "sphinx-copybutton>=0.5.2",
-    "myst-parser",
 ]
 dev = [
     "sdypy-model[docs]",
@@ -65,6 +64,7 @@ dev = [
 [project.urls]
 Homepage = "https://github.com/sdypy/sdypy-model"
 Source = "https://github.com/sdypy/sdypy-model"
+Documentation = "https://sdypy-model.readthedocs.io/en/latest/index.html"
 
 [tool.hatch.build.targets.wheel]
 packages = ["sdypy"]
@@ -74,7 +74,7 @@ include = [
     "sdypy/",
     "tests/",
     "docs/",
-    "README.md",
+    "README.rst",
     "License",
     "pyproject.toml",
     "readthedocs.yaml",

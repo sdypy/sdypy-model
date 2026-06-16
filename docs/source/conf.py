@@ -45,7 +45,6 @@ extensions = [
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
     'sphinx.ext.githubpages',
-    'myst_parser',
     'sphinx_copybutton',
 ]
 
@@ -67,7 +66,7 @@ templates_path = ['_templates']
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
 #
-source_suffix = {'.rst': 'restructuredtext', '.md': 'restructuredtext'}
+source_suffix = '.rst'
 
 # The master toctree document.
 master_doc = 'index'
@@ -93,18 +92,13 @@ pygments_style = None
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'sphinx_book_theme'
+html_theme = 'pydata_sphinx_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
-html_theme_options = {
-    "repository_branch": "master",
-    "navigation_with_keys": True,
-    "repository_url": "https://github.com/sdypy/sdypy-model",
-    "use_repository_button": True,
-}
+html_theme_options = {}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -198,10 +192,3 @@ epub_exclude_files = ['search.html']
 
 
 # -- Extension configuration -------------------------------------------------
-
-# -- Configuration for MyST parser (markdown in sphinx) ----------------------
-# see https://myst-parser.readthedocs.io/en/latest/ for more information
-myst_enable_extensions = [
-    "dollarmath",  # For LaTeX-style math in Markdown
-    "colon_fence", # For block directives using `::`
-]

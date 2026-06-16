@@ -1,4 +1,3 @@
 sdypy-model
-sphinx-book-theme
+pydata-sphinx-theme
 sphinx-copybutton
-myst-parser
