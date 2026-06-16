@@ -344,12 +344,10 @@ class TestPublicAll:
 
 class TestModuleObjects:
     def test_lumped_is_module(self):
-        import inspect
         import sdypy.model
         assert inspect.ismodule(sdypy.model.lumped)
 
     def test_mesh_is_module(self):
-        import inspect
         import sdypy.model
         assert inspect.ismodule(sdypy.model.mesh)
 

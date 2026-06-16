@@ -1,3 +1,0 @@
-sdypy-model
-pydata-sphinx-theme
-sphinx-copybutton

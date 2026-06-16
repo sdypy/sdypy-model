@@ -157,7 +157,7 @@ class Tetrahedron:
         self.n_dof_node = 3
         self.calc_n_freq = calc_n_freq
 
-        self.ro = density
+        self.density = density
         self.young_modulus = young_modulus
         self.poisson_ratio = poisson_ratio
         self.org = org
@@ -181,20 +181,35 @@ class Tetrahedron:
         
         if type(self.young_modulus) in [float, int, np.float64]:
             self.young_modulus = np.repeat(self.young_modulus, self.n_el)
-        if type(self.ro) in [float, int, np.float64]:
-            self.ro = np.repeat(self.ro, self.n_el)
+        if type(self.density) in [float, int, np.float64]:
+            self.density = np.repeat(self.density, self.n_el)
 
         if lumped:
-            self.K, self.M = self.assemble_matrices_lumped(self.young_modulus, self.ro)
+            self.K, self.M = self.assemble_matrices_lumped(self.young_modulus, self.density)
         else:
-            self.K, self.M = self.assemble_matrices(self.young_modulus, self.ro)
+            self.K, self.M = self.assemble_matrices(self.young_modulus, self.density)
 
         if self.org_rotation is not None:
             pass
 
         if self.added_masses is not None and self.mass_locations is not None:
             self.add_point_masses()
-    
+
+    @property
+    def ro(self):
+        """Backwards-compatible alias for :attr:`density`.
+
+        Earlier releases stored the element densities on ``self.ro``; the
+        attribute is now ``self.density`` (matching the ``density`` argument and
+        the Beam/Shell elements). ``ro`` is kept as a transparent alias so
+        existing code reading or writing ``obj.ro`` keeps working unchanged.
+        """
+        return self.density
+
+    @ro.setter
+    def ro(self, value):
+        self.density = value
+
     # def add_point_masses(self):
     #     for i, m in zip(self.mass_locations, self.added_masses):
     #         # self.M[np.ix_(self.loce[i], self.loce[i])][0, 0] += m
@@ -397,13 +412,13 @@ class Tetrahedron:
             
             E[derivative_E_ind] = E[derivative_E_ind] + step
             
-            K_, M_ = self.assemble_matrices(E, self.ro)
+            K_, M_ = self.assemble_matrices(E, self.density)
             
             self.K_diff = (K_ - self.K) / step
             self.M_diff = sparse.csc_matrix(self.K_diff.shape)
             
         elif derivative_ro_ind is not None:
-            ro = self.ro.copy()
+            ro = self.density.copy()
             step = np.mean(ro[derivative_ro_ind] * diff_step)
             
             ro[derivative_ro_ind] = ro[derivative_ro_ind] + step
