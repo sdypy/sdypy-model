@@ -547,23 +547,24 @@ def MITC4_global(nodes, elements, E, nu, rho, thickness, verbose=0, mass_lumping
     return K, M
 
 class Shell:
-    def __init__(self, nodes, elements, E, nu, rho, thickness, verbose=0, 
-                 mass_lumping=False, force_nonsingularity=False, mass_threshold=None):
+    def __init__(self, nodes, elements, young_modulus, poisson_ratio, density, thickness, verbose=0,
+                 mass_lumping=False, force_nonsingularity=False, mass_threshold=None,
+                 *, E=None, nu=None, rho=None):
         """Initialize the shell model.
-        
+
         Parameters
         ----------
         nodes : array
             The nodes of the mesh.
         elements : array
             The elements of the mesh.
-        E : float or iterable
+        young_modulus : float or iterable
             The Young's modulus of the material. If float, all elements are the same.
             If iterable, must be the same length as elements.
-        nu : float or iterable
+        poisson_ratio : float or iterable
             The Poisson's ratio of the material. If float, all elements are the same.
             If iterable, must be the same length as elements.
-        rho : float or iterable
+        density : float or iterable
             The density of the material. If float, all elements are the same.
             If iterable, must be the same length as elements.
         thickness : float or iterable
@@ -577,10 +578,53 @@ class Shell:
             If True, add a small value to the diagonal of the mass matrix to force nonsingularity.
         mass_threshold : float
             The threshold for the mass matrix. Elements of the matrix below this threshold are set to zero.
+
+        Deprecated parameters
+        ---------------------
+        E : use young_modulus instead.
+        nu : use poisson_ratio instead.
+        rho : use density instead.
         """
-        self.E = E
-        self.nu = nu
-        self.rho = rho
+        if E is not None:
+            if young_modulus is not None:
+                raise TypeError(
+                    "Cannot pass both 'young_modulus' and deprecated 'E'. "
+                    "Use 'young_modulus' only."
+                )
+            warnings.warn(
+                "E is deprecated; use young_modulus instead",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            young_modulus = E
+        if nu is not None:
+            if poisson_ratio is not None:
+                raise TypeError(
+                    "Cannot pass both 'poisson_ratio' and deprecated 'nu'. "
+                    "Use 'poisson_ratio' only."
+                )
+            warnings.warn(
+                "nu is deprecated; use poisson_ratio instead",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            poisson_ratio = nu
+        if rho is not None:
+            if density is not None:
+                raise TypeError(
+                    "Cannot pass both 'density' and deprecated 'rho'. "
+                    "Use 'density' only."
+                )
+            warnings.warn(
+                "rho is deprecated; use density instead",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            density = rho
+
+        self.young_modulus = young_modulus
+        self.poisson_ratio = poisson_ratio
+        self.density = density
         self.thickness = thickness
         self.nodes = nodes
         self.elements = elements
@@ -592,26 +636,26 @@ class Shell:
         self.n_nodes = self.nodes.shape[0]
         self.n_el = self.elements.shape[0]
 
-        # check if self.E is iterable
-        if not isinstance(self.E, Iterable):
-            self.E = np.array([self.E] * self.n_el)
-        elif len(self.E) != self.n_el:
-            raise ValueError("self.E must be the same length as elements.")
+        # check if self.young_modulus is iterable
+        if not isinstance(self.young_modulus, Iterable):
+            self.young_modulus = np.array([self.young_modulus] * self.n_el)
+        elif len(self.young_modulus) != self.n_el:
+            raise ValueError("young_modulus must be the same length as elements.")
 
-        if not isinstance(self.rho, Iterable):
-            self.rho = np.array([self.rho] * self.n_el)
-        elif len(self.rho) != self.n_el:
-            raise ValueError("rho must be the same length as elements.")
+        if not isinstance(self.density, Iterable):
+            self.density = np.array([self.density] * self.n_el)
+        elif len(self.density) != self.n_el:
+            raise ValueError("density must be the same length as elements.")
 
         if not isinstance(self.thickness, Iterable):
             self.thickness = np.array([self.thickness] * self.n_el)
         elif len(self.thickness) != self.n_el:
-            raise ValueError("nu must be the same length as elements.")
-        
-        if not isinstance(self.nu, Iterable):
-            self.nu = np.array([self.nu] * self.n_el)
-        elif len(self.nu) != self.n_el:
-            raise ValueError("nu must be the same length as elements.")
+            raise ValueError("thickness must be the same length as elements.")
+
+        if not isinstance(self.poisson_ratio, Iterable):
+            self.poisson_ratio = np.array([self.poisson_ratio] * self.n_el)
+        elif len(self.poisson_ratio) != self.n_el:
+            raise ValueError("poisson_ratio must be the same length as elements.")
         
         # Construct the global stiffness and mass matrices
         self.construct_global_matrices()
@@ -622,9 +666,9 @@ class Shell:
         Using the MITC4 elements. The code is based on the MatLab code and on the
         Finite Element Procedures book by Bathe.
         """
-        E = self.E[el]
-        nu = self.nu[el]
-        rho = self.rho[el]
+        E = self.young_modulus[el]
+        nu = self.poisson_ratio[el]
+        rho = self.density[el]
         thickness = self.thickness[el]
 
         # Calculate normal at each node
@@ -801,7 +845,7 @@ class Shell:
             nodes_el = self.nodes[element]
             
             # Get the element stiffness and mass matrix
-            # K_el, M_el, data_dict = MITC4_element(self.E[el], self.nu[el], self.rho[el], self.thickness[el], nodes_el)
+            # K_el, M_el, data_dict = MITC4_element(self.young_modulus[el], self.poisson_ratio[el], self.density[el], self.thickness[el], nodes_el)
             K_el, M_el, data_dict = self.construct_MITC4_matrices_for_element(nodes_el, el)
             
             # Extract normal and orthogonal vectors

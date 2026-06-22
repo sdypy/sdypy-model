@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "sdypy-model"
-version = "0.1.4"
+version = "0.2.0"
 authors = [
     { name = "Klemen Zaletelj, Janko Slavič et al.", email = "janko.slavic@fs.uni-lj.si" },
 ]
@@ -15,7 +15,7 @@ maintainers = [
 ]
 license = "MIT"
 description = "System modeling, including lumped mass and FEM."
-readme = "README.md"
+readme = "README.rst"
 keywords = [
     "System model",
     "lumped mass",
@@ -33,34 +33,54 @@ dependencies = [
     "gmsh",
 ]
 classifiers = [
-    "Development Status :: 5 - Production/Stable",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering",
-    "Programming Language :: Python :: 3.10",
     "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
 ]
 
 [project.optional-dependencies]
-dev = [
+qt = [
+    "pyqt6",
+]
+docs = [
     "sphinx",
+    "pydata-sphinx-theme",
+    "sphinx-copybutton>=0.5.2",
+]
+dev = [
+    "sdypy-model[docs]",
     "twine",
     "wheel",
     "pytest",
     "build",
-    "sphinx-book-theme",
-    "sphinx-copybutton>=0.5.2",
-    "myst-parser",
-]
-qt = [
-    "pyqt6",
+    "flake8",
 ]
 
 [project.urls]
-homepage = "https://github.com/sdypy/sdypy-model"
-documentation = "https://github.com/sdypy/sdypy-model"
-source = "https://github.com/sdypy/sdypy-model"
+Homepage = "https://github.com/sdypy/sdypy-model"
+Source = "https://github.com/sdypy/sdypy-model"
+Documentation = "https://sdypy-model.readthedocs.io/en/latest/index.html"
 
 [tool.hatch.build.targets.wheel]
+packages = ["sdypy"]
+
+[tool.hatch.build.targets.sdist]
 include = [
-    "sdypy",
+    "sdypy/",
+    "tests/",
+    "docs/",
+    "README.rst",
+    "License",
+    "pyproject.toml",
+    "readthedocs.yaml",
+    "CONTRIBUTING.rst",
+]
+exclude = [
+    "docs/_build/",
+    "docs/build/",
 ]
