@@ -74,11 +74,12 @@ prob = sd.model.AcousticExternalProblem(
     use_burton_miller=False,                # combined (Burton–Miller) formulation, optional
 )
 
-phi = prob.solve_problem()                  # velocity potential on the boundary
+phi, q = prob.solve_problem()               # boundary solution: potential + ∂φ/∂n
 
-# Radiated pressure on a set of field points of shape (N, 3) [m]
+# Radiated velocity potential at field points of shape (N, 3) [m]
 pts = np.array([[0.3, 0.0, 0.0], [0.0, 0.0, 0.5]])
-p = prob.evaluate_field(pts, result_type="p")   # complex pressure [Pa]
+phi_field = prob.evaluate_field(pts)        # velocity potential φ
+p = 1j * 2 * np.pi * prob.frequency * prob.rho * phi_field   # pressure p = jωρφ [Pa]
 ```
 
 Use `set_frequency()` / `set_boundary_condition()` to reuse the assembled model across

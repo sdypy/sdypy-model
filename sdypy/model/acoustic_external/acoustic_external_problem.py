@@ -94,9 +94,11 @@ class AcousticExternalProblem:
     ...     boundary_condition=vn, boundary_condition_type="Neumann",
     ...     frequency=500.0,
     ... )
-    >>> phi = prob.solve_problem(verbose=False)
+    >>> phi, q = prob.solve_problem(verbose=False)
     >>> field_pts = np.array([[0.0, 0.0, 2.0]])
-    >>> p = prob.evaluate_field(field_pts, result_type="p", verbose=False)
+    >>> phi_field = prob.evaluate_field(field_pts, verbose=False)
+    >>> # acoustic pressure: p = j ω ρ₀ φ
+    >>> p = 1j * 2 * np.pi * prob.frequency * prob.rho * phi_field
     """
 
     def __init__(
@@ -284,14 +286,16 @@ class AcousticExternalProblem:
 
     # ── Solve ─────────────────────────────────────────────────────────────────
 
-    def solve_problem(self, verbose: bool = True) -> np.ndarray:
+    def solve_problem(
+        self, verbose: bool = True
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
         Solve the BEM problem.
 
         If matrices have not been assembled yet (or the frequency has been
         changed since the last assembly), they are assembled automatically
-        before solving.  The result is stored as ``self.phi`` (velocity
-        potential) and ``self.q`` (normal derivative).
+        before solving.  The result is also stored on the instance as
+        ``self.phi`` (velocity potential) and ``self.q`` (normal derivative).
 
         Parameters
         ----------
@@ -300,10 +304,27 @@ class AcousticExternalProblem:
 
         Returns
         -------
-        np.ndarray
+        phi : np.ndarray
             Velocity potential ``φ`` on the boundary degrees of freedom,
-            shape ``(num_dofs,)``.  Use :meth:`evaluate_field` to obtain
-            the acoustic pressure or potential at arbitrary field points.
+            shape ``(num_dofs,)``.
+        q : np.ndarray
+            Normal derivative ``q = ∂φ/∂n`` on the boundary degrees of
+            freedom, shape ``(num_dofs,)``.
+
+        Notes
+        -----
+        The returned ``(phi, q)`` pair is the complete boundary solution: it
+        can be stored and later handed to :meth:`evaluate_field` (via its
+        ``solution`` / ``phi`` / ``q`` arguments) to evaluate the field
+        without solving again.
+
+        The surface (boundary) acoustic pressure follows from the potential as
+        ``p = j ω ρ₀ φ`` with ``ω = 2π·frequency`` [Pa].
+
+        Examples
+        --------
+        >>> phi, q = prob.solve_problem(verbose=False)        # doctest: +SKIP
+        >>> p_surface = 1j * 2 * np.pi * prob.frequency * prob.rho * phi
         """
         if not self._matrices_assembled:
             if self.use_burton_miller:
@@ -327,59 +348,97 @@ class AcousticExternalProblem:
 
         self._phi = phi
         self._q = self.solver.velocity_BC
-        return phi
+        return self._phi, self._q
 
     # ── Field evaluation ──────────────────────────────────────────────────────
 
     def evaluate_field(
         self,
         field_points: np.ndarray,
-        result_type: str = "p",
+        solution: tuple[np.ndarray, np.ndarray] | None = None,
+        phi: np.ndarray | None = None,
+        q: np.ndarray | None = None,
         verbose: bool = True,
     ) -> np.ndarray:
         """
-        Evaluate the acoustic field at arbitrary points in the domain.
+        Evaluate the acoustic velocity potential at points in the domain.
 
-        Requires that :meth:`solve_problem` has been called first.
+        Uses the boundary solution ``(phi, q)`` and the Helmholtz boundary
+        integral representation.  By default the solution stored by
+        :meth:`solve_problem` is used, so a solve must have been run first.
+        Alternatively a **precomputed** boundary solution can be passed in —
+        either as a tuple via ``solution=(phi, q)`` or as the individual
+        ``phi`` and ``q`` arrays — which lets you reuse a stored solution
+        without solving again (see Notes).
 
         Parameters
         ----------
         field_points : np.ndarray
             Array of query points, shape ``(M, 3)``, in metres [m].
-        result_type : str, optional
-            ``"p"`` (default) — return acoustic pressure ``p = j ω ρ₀ φ``
-            in Pascals [Pa].
-
-            ``"phi"`` — return velocity potential ``φ`` in [m²/s].
+        solution : tuple of np.ndarray, optional
+            Precomputed boundary solution ``(phi, q)`` at the boundary degrees
+            of freedom, as returned by :meth:`solve_problem`.  Mutually
+            exclusive with the ``phi`` / ``q`` arguments.
+        phi : np.ndarray, optional
+            Precomputed boundary velocity potential at the DOFs.  Use together
+            with ``q`` instead of ``solution``.
+        q : np.ndarray, optional
+            Precomputed boundary normal derivative ``∂φ/∂n`` at the DOFs.
         verbose : bool, optional
             Show a progress bar during integration.
 
         Returns
         -------
         np.ndarray
-            Complex field values at the query points, shape ``(M,)``.
+            Complex velocity potential ``φ`` at the query points, shape
+            ``(M,)``.  Obtain the acoustic pressure with
+            ``p = 1j * 2 * np.pi * prob.frequency * prob.rho * phi`` [Pa].
+
+        Notes
+        -----
+        Precompute-and-reuse workflow: call :meth:`solve_problem` once and keep
+        the returned ``(phi, q)`` (the expensive part is the matrix assembly and
+        linear solve).  Later, rebuild an :class:`AcousticExternalProblem` with
+        the **same mesh and frequency** and pass the stored solution::
+
+            phi, q = prob.solve_problem()
+            # ... store phi, q (e.g. np.savez) ...
+            # later, after rebuilding `prob` identically:
+            phi_field = prob.evaluate_field(pts, solution=(phi, q))
+
+        Only the solve is skipped; the surface geometry is reconstructed from
+        the rebuilt problem.
+
+        Raises
+        ------
+        ValueError
+            If both ``solution`` and ``phi``/``q`` are supplied.
+        RuntimeError
+            If no boundary solution is available (no precomputed input given
+            and :meth:`solve_problem` has not been run).
         """
-        if self._phi is None or self._q is None:
+        if solution is not None:
+            if phi is not None or q is not None:
+                raise ValueError(
+                    "Pass either solution=(phi, q) or phi=/q=, not both."
+                )
+            phi, q = solution
+
+        phi = self._phi if phi is None else phi
+        q = self._q if q is None else q
+
+        if phi is None or q is None:
             raise RuntimeError(
-                "No solution available.  Call solve_problem() first."
+                "No boundary solution available.  Call solve_problem() first, "
+                "or pass a precomputed solution=(phi, q) (or phi=, q=)."
             )
 
-        phi_field = self.solver.evaluate_field(
+        return self.solver.evaluate_field(
             field_points=np.asarray(field_points, dtype=np.float64),
-            phi=self._phi,
-            q=self._q,
+            phi=phi,
+            q=q,
             quad_order=self.quad_order,
             verbose=verbose,
-        )
-
-        if result_type == "phi":
-            return phi_field
-        if result_type == "p":
-            omega = 2.0 * np.pi * self._frequency
-            return 1j * omega * self.rho * phi_field
-
-        raise ValueError(
-            f"result_type must be 'p' or 'phi', got '{result_type}'."
         )
 
     # ── Properties ────────────────────────────────────────────────────────────

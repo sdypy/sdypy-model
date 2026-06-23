@@ -24,17 +24,18 @@ import matplotlib.pyplot as plt
 from sdypy.model.acoustic_external import AcousticExternalProblem
 
 
-def evaluate_field_batched(prob, pts, result_type="p", chunk=4000):
-    """Evaluate the field in chunks to keep peak memory bounded.
+def evaluate_field_batched(prob, pts, chunk=4000):
+    """Evaluate the velocity potential in chunks to keep peak memory bounded.
 
     ``evaluate_field`` builds a dense (n_points x n_dof x n_quad) intermediate,
     so a large grid (e.g. 200x200) can need many GB at once. Splitting the
     evaluation points into chunks caps the peak memory at the chunk size.
+    Returns the potential ``phi``; convert to pressure with ``p = j ω ρ φ``.
     """
     out = np.empty(pts.shape[0], dtype=complex)
     for i in range(0, pts.shape[0], chunk):
         out[i:i + chunk] = prob.evaluate_field(
-            pts[i:i + chunk], result_type=result_type, verbose=False
+            pts[i:i + chunk], verbose=False
         )
     return out
 
@@ -99,9 +100,9 @@ prob = AcousticExternalProblem(
 )
 
 print("\nAssembling matrices and solving ...")
-phi = prob.solve_problem(verbose=True)
+phi, q = prob.solve_problem(verbose=True)
 
-# Surface pressure from BEM
+# Surface pressure from BEM potential:  p = j ω ρ φ
 p_bem = 1j * 2 * np.pi * FREQ * RHO * phi
 p_max = np.max(np.abs(p_bem))
 print(f"\n  max |p| on boundary (BEM) = {p_max:.4e} Pa")
@@ -130,7 +131,8 @@ YY = np.zeros_like(XX)
 field_pts = np.column_stack([XX.ravel(), YY.ravel(), ZZ.ravel()])
 
 print(f"\nEvaluating pressure field on {field_pts.shape[0]} points ...")
-p_field = evaluate_field_batched(prob, field_pts, result_type="p")
+phi_field = evaluate_field_batched(prob, field_pts)       # velocity potential
+p_field = 1j * omega * RHO * phi_field                    # pressure  p = j ω ρ φ
 p_field = p_field.reshape(XX.shape)
 
 # Analytical field pressure (exclude points inside sphere)
@@ -178,7 +180,7 @@ fig.colorbar(im1, ax=axes[0,1])
 # Cross-section along z = 0 (x-axis)
 r_line = np.linspace(A, extent, 200)
 line_pts = np.column_stack([r_line, np.zeros_like(r_line), np.zeros_like(r_line)])
-p_line_bem = prob.evaluate_field(line_pts, result_type="p", verbose=False)
+p_line_bem = 1j * omega * RHO * prob.evaluate_field(line_pts, verbose=False)
 p_line_ana = p_surface_analytical * (A / r_line) * np.exp(-1j * k * (r_line - A))
 
 ax2 = axes[1,0]

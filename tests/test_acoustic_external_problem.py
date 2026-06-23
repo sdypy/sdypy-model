@@ -53,8 +53,8 @@ def test_pulsating_sphere_surface_pressure():
         use_burton_miller=True,
     )
 
-    phi = prob.solve_problem(verbose=False)
-    assert phi is not None
+    phi, q = prob.solve_problem(verbose=False)
+    assert phi is not None and q is not None
     assert phi.shape[0] == sphere.n_points
 
     # Surface pressure should be non-zero and finite
@@ -62,13 +62,13 @@ def test_pulsating_sphere_surface_pressure():
     assert np.all(np.isfinite(p_surf)), "Non-finite surface pressure"
     assert np.max(np.abs(p_surf)) > 0, "Zero surface pressure"
 
-    # Field should decay with distance
+    # Field potential should decay with distance (|p| ∝ |phi|)
     r_near = np.array([[0.2, 0.0, 0.0]])
     r_far  = np.array([[1.0, 0.0, 0.0]])
-    p_near = prob.evaluate_field(r_near, result_type="p", verbose=False)
-    p_far  = prob.evaluate_field(r_far,  result_type="p", verbose=False)
-    assert np.abs(p_far[0]) < np.abs(p_near[0]), (
-        "Pressure should decay with distance"
+    phi_near = prob.evaluate_field(r_near, verbose=False)
+    phi_far  = prob.evaluate_field(r_far,  verbose=False)
+    assert np.abs(phi_far[0]) < np.abs(phi_near[0]), (
+        "Potential should decay with distance"
     )
 
 
@@ -100,9 +100,12 @@ def test_pulsating_sphere_quantitative_accuracy():
     r = 0.5
     p_field_ana = p_surf_ana * (a / r) * np.exp(-1j * k * (r - a))
 
-    p_field_bem = prob.evaluate_field(
-        np.array([[r, 0.0, 0.0]]), result_type="p", verbose=False
+    # evaluate_field returns the potential φ; convert to pressure p = jωρφ
+    omega = 2 * np.pi * freq
+    phi_field_bem = prob.evaluate_field(
+        np.array([[r, 0.0, 0.0]]), verbose=False
     )[0]
+    p_field_bem = 1j * omega * rho0 * phi_field_bem
 
     rel_err = abs(abs(p_field_bem) - abs(p_field_ana)) / abs(p_field_ana)
     assert rel_err < 0.10, f"Field pressure rel. error too high: {rel_err:.1%}"
@@ -158,7 +161,7 @@ def test_set_boundary_condition():
 
 
 def test_evaluate_field():
-    """Field evaluation should return correct shape and type."""
+    """Field evaluation should return the potential with correct shape/type."""
     sphere = _small_sphere(0.15)
     vn = 0.01 * np.ones(sphere.n_points, dtype=np.float64)
 
@@ -171,14 +174,71 @@ def test_evaluate_field():
 
     # Evaluate at a single point outside the sphere
     pts = np.array([[0.3, 0.0, 0.0]])
-    p = prob.evaluate_field(pts, result_type="p", verbose=False)
-    assert p.shape == (1,), f"Expected shape (1,), got {p.shape}"
-    assert np.issubdtype(p.dtype, np.complexfloating)
-
-    # Evaluate with result_type="phi"
-    phi_pts = prob.evaluate_field(pts, result_type="phi", verbose=False)
-    assert phi_pts.shape == (1,)
+    phi_pts = prob.evaluate_field(pts, verbose=False)
+    assert phi_pts.shape == (1,), f"Expected shape (1,), got {phi_pts.shape}"
     assert np.issubdtype(phi_pts.dtype, np.complexfloating)
+
+
+def test_solve_problem_returns_boundary_solution():
+    """solve_problem returns the (phi, q) pair, matching the properties."""
+    sphere = _small_sphere(0.15)
+    vn = 0.01 * np.ones(sphere.n_points, dtype=np.float64)
+
+    prob = AcousticExternalProblem(
+        mesh=sphere, rho=1.225, c0=343.0,
+        boundary_condition=vn, boundary_condition_type="Neumann",
+        frequency=500.0, use_burton_miller=False,
+    )
+    result = prob.solve_problem(verbose=False)
+
+    assert isinstance(result, tuple) and len(result) == 2
+    phi, q = result
+    assert phi.shape == q.shape == (sphere.n_points,)
+    np.testing.assert_array_equal(phi, prob.phi)
+    np.testing.assert_array_equal(q, prob.q)
+
+
+def test_precomputed_solution_reuse():
+    """A precomputed (phi, q) can be evaluated on a fresh problem without solving."""
+    sphere = _small_sphere(0.15)
+    vn = 0.01 * np.ones(sphere.n_points, dtype=np.float64)
+    pts = np.array([[0.3, 0.0, 0.0], [0.0, 0.0, 0.4]])
+    kwargs = dict(
+        mesh=sphere, rho=1.225, c0=343.0,
+        boundary_condition=vn, boundary_condition_type="Neumann",
+        frequency=500.0, use_burton_miller=False,
+    )
+
+    # Solve on instance A
+    prob_a = AcousticExternalProblem(**kwargs)
+    phi, q = prob_a.solve_problem(verbose=False)
+    ref = prob_a.evaluate_field(pts, verbose=False)
+
+    # Fresh instance B (same mesh + frequency), no solve — pass the solution
+    prob_b = AcousticExternalProblem(**kwargs)
+    out_tuple = prob_b.evaluate_field(pts, solution=(phi, q), verbose=False)
+    out_kwargs = prob_b.evaluate_field(pts, phi=phi, q=q, verbose=False)
+
+    np.testing.assert_allclose(out_tuple, ref)
+    np.testing.assert_allclose(out_kwargs, ref)
+
+
+def test_evaluate_field_solution_conflict():
+    """Passing both solution and phi/q raises ValueError."""
+    import pytest
+
+    sphere = _small_sphere(0.15)
+    vn = 0.01 * np.ones(sphere.n_points, dtype=np.float64)
+    prob = AcousticExternalProblem(
+        mesh=sphere, rho=1.225, c0=343.0,
+        boundary_condition=vn, boundary_condition_type="Neumann",
+        frequency=500.0, use_burton_miller=False,
+    )
+    phi, q = prob.solve_problem(verbose=False)
+    with pytest.raises(ValueError):
+        prob.evaluate_field(
+            np.array([[0.3, 0.0, 0.0]]), solution=(phi, q), phi=phi, verbose=False
+        )
 
 
 def test_assembler_types():
@@ -192,9 +252,9 @@ def test_assembler_types():
             boundary_condition=vn, boundary_condition_type="Neumann",
             frequency=500.0, assembler_type=atype,
         )
-        phi = prob.solve_problem(verbose=False)
-        assert phi is not None
-        assert len(phi) > 0
+        phi, q = prob.solve_problem(verbose=False)
+        assert phi is not None and q is not None
+        assert len(phi) > 0 and len(q) > 0
 
 
 def test_invalid_parameters():
