@@ -72,6 +72,42 @@ def test_pulsating_sphere_surface_pressure():
     )
 
 
+def test_pulsating_sphere_quantitative_accuracy():
+    """
+    Regression test: on a moderately refined mesh the BEM field pressure must
+    match the analytical pulsating-sphere solution to within a few percent.
+    Guards the physics (the qualitative test above only checks decay).
+    """
+    rho0, c0, freq, v0, a = 1.225, 343.0, 500.0, 0.01, 0.15
+    k = 2 * np.pi * freq / c0
+
+    sphere = pv.Sphere(radius=a, theta_resolution=16, phi_resolution=16)
+    sphere.compute_normals(
+        point_normals=True, cell_normals=False,
+        consistent_normals=True, auto_orient_normals=True, inplace=True,
+    )
+    vn = v0 * np.ones(sphere.n_points, dtype=np.float64)
+
+    prob = AcousticExternalProblem(
+        mesh=sphere, rho=rho0, c0=c0,
+        boundary_condition=vn, boundary_condition_type="Neumann",
+        frequency=freq, assembler_type="continuous", use_burton_miller=False,
+    )
+    prob.solve_problem(verbose=False)
+
+    # Analytical surface and radiated field pressure at r = 0.5 m
+    p_surf_ana = pulsating_sphere_surface_pressure(a, k, v0, rho0, c0)
+    r = 0.5
+    p_field_ana = p_surf_ana * (a / r) * np.exp(-1j * k * (r - a))
+
+    p_field_bem = prob.evaluate_field(
+        np.array([[r, 0.0, 0.0]]), result_type="p", verbose=False
+    )[0]
+
+    rel_err = abs(abs(p_field_bem) - abs(p_field_ana)) / abs(p_field_ana)
+    assert rel_err < 0.10, f"Field pressure rel. error too high: {rel_err:.1%}"
+
+
 def test_set_frequency():
     """Changing frequency should reset the assembled-matrices flag."""
     sphere = _small_sphere(0.15)

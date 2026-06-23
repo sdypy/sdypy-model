@@ -162,18 +162,21 @@ class BEMSolver:
         This method forms a linear combination of the standard boundary equation
         and its normal-derivative equation to remove spurious resonances.
 
-        The combined equation is taken (for exterior problems) in the form:
+        The combined equation is taken (for exterior problems) in the form::
+
             (D - C) φ + α N φ = S q + α (C + K') q,
             [(D - C) + α N] φ = [S + α (C + K')] q
 
         where C is the double-layer jump term (typically 0.5·I on closed smooth
-        surfaces).
+        surfaces)::
+
             S  : single layer (G)
             D  : double layer (∂G/∂n_y)
             K' : adjoint double layer (∂G/∂n_x)
             N  : hypersingular (∂²G/∂n_x∂n_y)
 
         Given boundary data, the method solves for the complementary unknown:
+
         - bc_type="Neumann": given q = ∂φ/∂n, solve for φ on Γ
         - bc_type="Dirichlet": given φ on Γ, solve for q = ∂φ/∂n on Γ
 

@@ -9,6 +9,7 @@ class Body:
                  frequency: float | None = None,):
         """
         Initialize the Body class for acoustic boundary element method.
+
         Args:
             mesh_nodes (np.ndarray): Array of shape (N, 3) representing the
                 coordinates of the mesh nodes.
@@ -196,8 +197,10 @@ class Field:
                  c0: float = 343.0,):
         """
         Initialize the Field class for acoustic boundary element method.
+
         Initializes:
-            - field_points: Array of shape (P, 3) representing the field points.
+
+        - field_points: Array of shape (P, 3) representing the field points.
 
         Args:
             field_extent (np.ndarray): Array of shape (3, 2) defining the min
@@ -246,15 +249,16 @@ def box_mesh(center: np.ndarray,
 
     """
     Create a box mesh centered at 'center' with given 'size'.
+
     Args:
         center (np.ndarray): Center of the box (3,).
         size (np.ndarray): Size of the box along each axis (3,).
         divisions (int, optional): Number of subdivisions along each edge.
             each edge. If an array, should be of shape (3,) for x, y, z axes.
+
     Returns:
         v (np.ndarray): Array of shape (N, 3) with vertex coordinates.
-        elements (np.ndarray): Array of shape (M, 3) with triangular element
-            connectivity.
+        elements (np.ndarray): Array of shape (M, 3) with triangle connectivity.
     """
 
     c = np.asarray(center).reshape(3)

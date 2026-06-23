@@ -14,16 +14,29 @@ and the field pressure at distance r >= a is:
     p(r) = p_surface * (a / r) * exp(-j * k * (r - a))
 """
 
-import sys
 import os
 import numpy as np
 import pyvista as pv
+import matplotlib
+matplotlib.use("Agg")  # headless: write figures to file, no display needed
 import matplotlib.pyplot as plt
 
-# Ensure the package can be found
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-
 from sdypy.model.acoustic_external import AcousticExternalProblem
+
+
+def evaluate_field_batched(prob, pts, result_type="p", chunk=4000):
+    """Evaluate the field in chunks to keep peak memory bounded.
+
+    ``evaluate_field`` builds a dense (n_points x n_dof x n_quad) intermediate,
+    so a large grid (e.g. 200x200) can need many GB at once. Splitting the
+    evaluation points into chunks caps the peak memory at the chunk size.
+    """
+    out = np.empty(pts.shape[0], dtype=complex)
+    for i in range(0, pts.shape[0], chunk):
+        out[i:i + chunk] = prob.evaluate_field(
+            pts[i:i + chunk], result_type=result_type, verbose=False
+        )
+    return out
 
 
 # =============================================================================
@@ -117,7 +130,7 @@ YY = np.zeros_like(XX)
 field_pts = np.column_stack([XX.ravel(), YY.ravel(), ZZ.ravel()])
 
 print(f"\nEvaluating pressure field on {field_pts.shape[0]} points ...")
-p_field = prob.evaluate_field(field_pts, result_type="p", verbose=True)
+p_field = evaluate_field_batched(prob, field_pts, result_type="p")
 p_field = p_field.reshape(XX.shape)
 
 # Analytical field pressure (exclude points inside sphere)
@@ -197,18 +210,20 @@ out_dir = os.path.dirname(__file__)
 save_path = os.path.join(out_dir, "pulsating_sphere_test_B-M.png")
 plt.savefig(save_path, dpi=150, bbox_inches="tight")
 print(f"\nFigure saved to: {save_path}")
-plt.show()
 
-# Also show the mesh and BEM boundary pressure with PyVista
-print("\nDisplaying 3-D mesh with boundary pressure ...")
+# Also render the mesh and BEM boundary pressure with PyVista (headless screenshot)
+print("\nRendering 3-D mesh with boundary pressure ...")
 sphere_mesh = sphere.copy()
 sphere_mesh["p_bem"] = np.abs(p_bem)
 
 pv.set_plot_theme("document")
-pl = pv.Plotter()
+pl = pv.Plotter(off_screen=True)
 pl.add_mesh(sphere_mesh, scalars="p_bem", cmap="magma",
             show_edges=True, edge_color="gray", smooth_shading=True)
 pl.add_title(f"Boundary pressure |p|  (f = {FREQ:.0f} Hz)", font_size=12)
-pl.show()
+mesh_path = os.path.join(out_dir, "pulsating_sphere_boundary_pressure.png")
+pl.screenshot(mesh_path)
+pl.close()
+print(f"3-D render saved to: {mesh_path}")
 
 print("\nDone.")

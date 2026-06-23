@@ -10,12 +10,14 @@ class Mesh:
         """
         Initialize the mesh by merging multiple bodies and precomputing
         geometric properties.
+
         Args:
             source_object (Body): The main body with defined boundary
                 conditions and frequency.
             peripheral_objects (list[Body] | None): Additional bodies to be
                 merged into the mesh.
             field (Field): Field object defining medium properties.
+
         Raises:
             ValueError: If source_object does not have a defined frequency or
                 boundary conditions.
