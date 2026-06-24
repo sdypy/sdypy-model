@@ -154,7 +154,7 @@ class Beam:
         self.Ms1 = matrices_m_e(self.length, self.mass)
         if mode == "EB":
             self.Ks1 = matrices_k_e(self.length, self.EI)
-        elif mode == "Timoshenko":
+        elif mode == "T":
             self.Ks1 = matrices_k_e_timoshenko(self.length, self.Young, self.I, self.area)
 
         for i in range(self.n_elements):
