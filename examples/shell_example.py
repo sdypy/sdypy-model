@@ -2,7 +2,6 @@ import os
 import sys
 import pickle
 import meshio
-from pyvistaqt import BackgroundPlotter
 import pyvista as pv
 import numpy as np
 from scipy.sparse.linalg import eigsh
@@ -15,11 +14,9 @@ sys.path.append(current_path)
 from sdypy.model import Shell
 
 
-# Load the mesh
-try:
-    mesh = meshio.read("examples/data/L_bracket.msh")
-except:
-    mesh = meshio.read("data/L_bracket.msh")
+# Load the mesh (resolve the path relative to this script so it runs from any cwd)
+mesh_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "L_bracket.msh")
+mesh = meshio.read(mesh_path)
 
 # extract nodes and elements from mesh
 nodes = mesh.points / 1000
@@ -53,11 +50,27 @@ rows = int(np.floor(np.sqrt(n_plots)))
 cols = int(n_plots // rows)
 shape = (rows, cols)
 
-try:
-    # Initialize a plotter with 6 subplots (2 rows, 3 columns)
-    plotter = BackgroundPlotter(shape=shape)
+# Decide between an interactive Qt window and headless off-screen rendering.
+# An interactive BackgroundPlotter needs a working display; under WSL (or any
+# environment without a usable X server) it crashes, so we fall back to
+# rendering the figure off-screen into a PNG next to this script.
+is_wsl = "microsoft" in os.uname().release.lower() or "WSL_DISTRO_NAME" in os.environ
+off_screen = (
+    os.environ.get("PYVISTA_OFF_SCREEN", "").lower() in ("1", "true")
+    or not os.environ.get("DISPLAY")
+    or is_wsl
+)
 
-    mode_start = 3
+try:
+    if off_screen:
+        # Headless: a static pyvista Plotter rendered to an image file.
+        plotter = pv.Plotter(shape=shape, off_screen=True, window_size=(1600, 1000))
+    else:
+        # Interactive: a Qt background window (needs pyvistaqt + a display).
+        from pyvistaqt import BackgroundPlotter
+        plotter = BackgroundPlotter(shape=shape)
+
+    mode_start = 6
     for ii in range(int(rows*cols)):
         mode_number = mode_start + ii
         modal_shape = eigenvectors[:, mode_number]
@@ -102,9 +115,16 @@ try:
         plotter.add_text(f"Mode {mode_number} ({np.sqrt(eigenvalues[mode_number])/(2*np.pi):.2f} Hz)", font_size=12)
         plotter.show_grid()
 
-    # Show the plotter with all subplots
-    plotter.show()
-    input()
+    if off_screen:
+        # Render all subplots to a PNG beside this script.
+        out_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "shell_modes.png")
+        plotter.screenshot(out_path)
+        plotter.close()
+        print(f"No usable display detected — saved the mode shapes to {out_path}")
+    else:
+        # Show the plotter with all subplots
+        plotter.show()
+        input()
 except Exception as e:
     print("To show the output on a plot, install a QT background.")
     print(e)
