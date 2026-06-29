@@ -128,9 +128,9 @@ omega = 2 * np.pi * FREQ
 p_surface = 1j * omega * RHO * phi
 ```
 
-For the pulsating sphere the analytical surface pressure is
+For the pulsating sphere the analytical solution for the surface pressure is
 $p_\text{s} = \rho_0 c_0 v_0 \, \dfrac{jka}{1 + jka}$ with $k = \omega/c_0$. At
-500 Hz ($ka = 1.37$) the BEM surface pressure matches it to about **5 %**:
+500 Hz ($ka = 1.37$) the BEM solution matches it to about **5 %**:
 
 ```python
 k  = omega / C0
@@ -168,8 +168,7 @@ p_field = (1j * omega * RHO * phi_field).reshape(XX.shape)
 
 ```{warning}
 `evaluate_field` builds a dense `(n_points × n_dof × n_quad)` intermediate, so a
-large grid (e.g. 200×200) can need several GB at once. For big grids, evaluate in
-chunks of a few thousand points and concatenate — see the helper
+large grid (e.g. 200×200) can need several GB at once. For large grids, evaluate the field partially, in multiple chunks of a few thousand points and concatenate — see the helper
 `evaluate_field_batched` in the shipped example.
 ```
 
