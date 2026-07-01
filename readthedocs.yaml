@@ -24,4 +24,9 @@ sphinx:
 # See https://docs.readthedocs.io/en/stable/guides/reproducible-builds.html
 python:
   install:
+  # Install this checkout (with its acoustic deps from pyproject) so autodoc can
+  # import sdypy.model.acoustic_external. Installing sdypy-model from PyPI would
+  # pull a stale release without the acoustic subpackage, blanking its API docs.
+  - method: pip
+    path: .
   - requirements: docs/requirements.txt
