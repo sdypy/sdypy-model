@@ -213,17 +213,29 @@ Burton–Miller is a tool for **robustness near the spurious resonance
 frequencies**, not a general accuracy upgrade. It assembles an extra
 (hypersingular) operator and, **away from** those frequencies, is often
 **less accurate** than the plain direct solve. For the pulsating sphere at
-500 Hz (well clear of any spurious frequency) the direct formulation gives a
-≈ 5 % surface-pressure error, while Burton–Miller gives ≈ 10 %:
+500 Hz (well clear of any spurious frequency, `res = 30`) the direct
+formulation gives a ≈ 5 % surface-pressure error, while Burton–Miller gives
+≈ 17 %:
 
 | Formulation | `use_burton_miller` | Surface-pressure error @ 500 Hz |
 |---|---|---|
 | Direct      | `False` | ≈ 5 %  |
-| Burton–Miller | `True` | ≈ 10 % |
+| Burton–Miller | `True` | ≈ 17 % |
+
+**Near an internal resonance the roles reverse.** At $ka = \pi$ (the first
+fictitious eigenfrequency of the sphere, ≈ 1143 Hz for $a = 0.15$ m) the direct
+formulation is polluted and **does not converge** under mesh refinement, while
+Burton–Miller converges normally:
+
+| Mesh (`res`) | Direct error | Burton–Miller error |
+|---|---|---|
+| 20 | ≈ 90 % | ≈ 34 % |
+| 30 | ≈ 93 % | ≈ 21 % |
+| 40 | ≈ 95 % | ≈ 14 % |
 
 **Rule of thumb:** leave `use_burton_miller=False` for ordinary radiation
-problems; switch it on only when you sweep a frequency band that approaches the
-body's internal resonances and you see the direct solution break down there.
+problems; switch it on when you sweep a frequency band that approaches the
+body's internal resonances, where the direct solution breaks down.
 ```
 
 ## Continuous vs discontinuous elements

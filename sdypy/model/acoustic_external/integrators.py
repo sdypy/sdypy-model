@@ -161,9 +161,15 @@ class ElementIntegratorCollocation:
         """
         Compute hypersingular integrals (regularised).
         
-        Uses the identity:
-        ∫_T ∂²G/(∂n_x∂n_y) N_j dS = 
-            k² ∫_T (n_x·n_y) G N_j dS + ∫_T ∇_y G · ∇_Γ N_j dS
+        Uses the Maue/Mitzner regularised identity (Burton & Miller 1971,
+        eq. 27), valid for the assembled operator on a closed surface:
+        ∫_Γ ∂²G/(∂n_x∂n_y) N_j dS =
+            k² ∫_Γ (n_x·n_y) G N_j dS
+            + ∫_Γ (n_x × ∇_x G) · (n_y × ∇_Γ N_j) dS
+
+        The second term is a surface-curl pairing (it couples both normals),
+        not a plain ∇_y G · ∇_Γ N_j dot product; the latter only coincides
+        with this when n_x = n_y.
 
         Args:
             x: Observation point, shape (3,).
@@ -188,7 +194,8 @@ class ElementIntegratorCollocation:
         G_vals = G(r_norm, self.k)
         
         dG_dr_vals = dG_dr(r_norm, G_vals, self.k)
-        grad_y_G = -dG_dr_vals[:, :, None] * r_hat
+        # ∇_x G = +dG/dr * r_hat  (r_hat points from y to x); ∇_y G = -∇_x G.
+        grad_x_G = dG_dr_vals[:, :, None] * r_hat
 
         part1 = np.einsum("kq,k,qj,kq->kj", 
                           G_vals, nx_dot_ny, N_vals, w_phys) * (self.k**2)
@@ -215,8 +222,10 @@ class ElementIntegratorCollocation:
         g = np.stack([g1, g2], axis=1)
         
         grad_N = np.einsum("kao,ja->kjo", g, dN_ref)
-        
-        dot_products = np.einsum("kqo,kjo->kjq", grad_y_G, grad_N)
-        part2 = np.einsum("kjq,kq->kj", dot_products, w_phys)
+
+        # Surface-curl pairing (n_x × ∇_x G) · (n_y × ∇_Γ N_j).
+        curl_x_G = np.cross(np.broadcast_to(x_normal, grad_x_G.shape), grad_x_G)
+        curl_N = np.cross(y_normals[:, None, :], grad_N)
+        part2 = np.einsum("kqo,kjo,kq->kj", curl_x_G, curl_N, w_phys)
 
         return part1 + part2
