@@ -92,8 +92,11 @@ class ContinuousAssembler:
     - Single-layer potential (``S``)
     - Double-layer potential (``D``)
     - Adjoint double-layer (``Kp``)
-    - Hypersingular operator (``N``)
     - Regularized hypersingular operator (``NReg``)
+
+    The raw hypersingular operator (``N``) is intentionally not assemblable:
+    its 1/r^3 kernel is not integrable by the Duffy/Telles rules on singular
+    and near-singular pairs. Use ``NReg`` instead.
 
     The assembler holds the mesh and integrator so that expensive data
     (geometry, connectivity, etc.) is reused across operators.
@@ -141,7 +144,9 @@ class ContinuousAssembler:
         Assemble the collocation matrix for a boundary operator.
 
         Args:
-            operator (str): One of ``{"S", "D", "Kp", "N", "NReg"}``.
+            operator (str): One of ``{"S", "D", "Kp", "NReg"}``. The raw
+                hypersingular ``"N"`` is not assemblable (see class docstring);
+                requesting it raises ``NotImplementedError``.
             verbose (bool): Show progress bar if True.
 
         Returns:
@@ -150,6 +155,15 @@ class ContinuousAssembler:
         """
         if operator not in {"S", "D", "Kp", "N", "NReg"}:
             raise ValueError(f"Unknown operator {operator}")
+        if operator == "N":
+            raise NotImplementedError(
+                "The raw hypersingular operator 'N' cannot be assembled on a "
+                "boundary mesh: its 1/r^3 kernel is not integrable by the "
+                "Duffy/Telles rules on singular and near-singular element "
+                "pairs, so those contributions diverge under quadrature "
+                "refinement. Use the regularized form 'NReg' (what the "
+                "Burton-Miller solve uses)."
+            )
 
         # prepare an empty matrix to fill
         A = np.zeros((self.Nn, self.Nn), dtype=np.complex128)
@@ -348,7 +362,8 @@ class DiscontinuousAssembler:
     - No need for Duffy quadrature (collocation points avoid vertices)
     - Telles quadrature still used for near-singular integrals
     
-    Supports the same operators: S, D, Kp, N, NReg
+    Supports the same operators: S, D, Kp, NReg (raw hypersingular "N" is not
+    assemblable — see ContinuousAssembler).
     """
     
     def __init__(self,
@@ -429,7 +444,8 @@ class DiscontinuousAssembler:
         Assemble the collocation matrix for a boundary operator.
         
         Args:
-            operator (str): One of {"S", "D", "Kp", "N", "NReg"}
+            operator (str): One of {"S", "D", "Kp", "NReg"}. Raw "N" is not
+                assemblable and raises NotImplementedError.
             verbose (bool): Show progress bar if True
             
         Returns:
@@ -439,6 +455,15 @@ class DiscontinuousAssembler:
         """
         if operator not in {"S", "D", "Kp", "N", "NReg"}:
             raise ValueError(f"Unknown operator: {operator}")
+        if operator == "N":
+            raise NotImplementedError(
+                "The raw hypersingular operator 'N' cannot be assembled on a "
+                "boundary mesh: its 1/r^3 kernel is not integrable by the "
+                "Duffy/Telles rules on singular and near-singular element "
+                "pairs, so those contributions diverge under quadrature "
+                "refinement. Use the regularized form 'NReg' (what the "
+                "Burton-Miller solve uses)."
+            )
             
         A = np.zeros((self.num_collocation, self.num_dofs), dtype=np.complex128)
         

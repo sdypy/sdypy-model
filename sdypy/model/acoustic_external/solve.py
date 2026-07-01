@@ -55,14 +55,16 @@ class BEMSolver:
             self.is_overdetermined = False
 
     def assemble_matrices(self, 
-                          ops: tuple[str, ...] = ("S","D","Kp","N", "NReg"),
+                          ops: tuple[str, ...] = ("S","D","Kp","NReg"),
                           verbose: bool = True,
                           ) -> dict[str, np.ndarray]:
         """
         Assemble selected operator matrices.
 
         Args:
-            ops (tuple[str, ...]): Any subset of {"S","D","Kp","N", "NReg"}.
+            ops (tuple[str, ...]): Any subset of {"S","D","Kp","NReg"}. The raw
+                hypersingular "N" is not assemblable (divergent on singular/
+                near pairs) and raises NotImplementedError.
             verbose (bool): Show progress bars if True.
 
         Returns:

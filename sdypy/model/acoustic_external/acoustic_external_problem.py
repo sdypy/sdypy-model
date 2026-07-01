@@ -267,7 +267,9 @@ class AcousticExternalProblem:
         ----------
         ops : tuple of str, optional
             Operators to assemble.  Any subset of
-            ``{"S", "D", "Kp", "N", "NReg"}``.
+            ``{"S", "D", "Kp", "NReg"}``.  The raw hypersingular ``"N"`` is not
+            assemblable (divergent on singular/near-singular pairs) and raises
+            ``NotImplementedError``; use ``"NReg"`` instead.
             Default is ``("S", "D", "Kp", "NReg")``.
         verbose : bool, optional
             Show progress bars during assembly.
