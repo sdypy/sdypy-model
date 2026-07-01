@@ -430,16 +430,18 @@ def permute_to_vertex(xi_eta: np.ndarray,
     if sing_vert_int == 0:
         return xi_eta
     elif sing_vert_int == 1:
-        xi = xi_eta[:, 0]
-        eta = xi_eta[:, 1]
-        xi_perm = eta
-        eta_perm = 1.0 - xi - eta
-        return np.column_stack([xi_perm, eta_perm])
-    elif sing_vert_int == 2:
+        # Map reference vertex 0 (0,0) -> vertex 1 (1,0), area-preserving.
         xi = xi_eta[:, 0]
         eta = xi_eta[:, 1]
         xi_perm = 1.0 - xi - eta
         eta_perm = xi
+        return np.column_stack([xi_perm, eta_perm])
+    elif sing_vert_int == 2:
+        # Map reference vertex 0 (0,0) -> vertex 2 (0,1), area-preserving.
+        xi = xi_eta[:, 0]
+        eta = xi_eta[:, 1]
+        xi_perm = eta
+        eta_perm = 1.0 - xi - eta
         return np.column_stack([xi_perm, eta_perm])
     else:
         raise ValueError("sing_vert_int must be 0, 1, or 2.")

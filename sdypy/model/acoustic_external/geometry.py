@@ -277,9 +277,12 @@ def box_mesh(center: np.ndarray,
                       [-1, -1, 1], [1, -1, 1], [1, 1, 1], [-1, 1, 1]])
     v = c + signs * h
 
-    elements = np.array([[0, 1, 2], [0, 2, 3], [4, 5, 6], [4, 6, 7],
+    # Winding is chosen so every face normal (v1-v0)x(v2-v0) points outward.
+    # The bottom (z-) and left (x-) faces are wound accordingly; a naive
+    # copy of the other faces' pattern flips their normals inward.
+    elements = np.array([[0, 2, 1], [0, 3, 2], [4, 5, 6], [4, 6, 7],
                          [0, 1, 5], [0, 5, 4], [2, 3, 7], [2, 7, 6],
-                         [0, 3, 7], [0, 7, 4], [1, 2, 6], [1, 6, 5]])
+                         [0, 7, 3], [0, 4, 7], [1, 2, 6], [1, 6, 5]])
 
     if divisions is not None and divisions > 1:
         v, elements = subdivide_triangles(v, elements, divisions)
