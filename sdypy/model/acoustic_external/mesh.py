@@ -64,6 +64,18 @@ class Mesh:
         if (q_all is not None) and (p_all is not None):
             raise ValueError("Cannot mix global Neumann and Dirichlet in this "\
             "pipeline.") # why?
+        # Every merged node must be covered: a body that supplies no BC (while
+        # others do) would leave q_all/p_all shorter than the node count and
+        # silently misalign the right-hand side.
+        if q_all is not None and q_all.shape[0] != self.num_nodes:
+            raise ValueError(
+                f"Neumann BCs cover {q_all.shape[0]} of {self.num_nodes} merged "
+                "nodes; every body must supply a Neumann BC for all its nodes.")
+        if p_all is not None and p_all.shape[0] != self.num_nodes:
+            raise ValueError(
+                f"Dirichlet BCs cover {p_all.shape[0]} of {self.num_nodes} "
+                "merged nodes; every body must supply a Dirichlet BC for all "
+                "its nodes.")
         if (q_all is None) and (p_all is None):
             q_all = np.zeros(mesh_nodes.shape[0], float)
 
@@ -212,19 +224,31 @@ class Mesh:
         q_blocks, p_blocks = [], []
 
         node_offset = 0
-        for obj in objs:
+        for i, obj in enumerate(objs):
             nodes = obj.mesh_nodes
+            n_obj = nodes.shape[0]
             elems = obj.mesh_elements + node_offset
             node_blocks.append(nodes)
             elem_blocks.append(elems)
 
             if obj.Neumann_BC is not None:
                 q = obj.Neumann_BC
+                if q.shape[0] != n_obj:
+                    raise ValueError(
+                        f"Body {i}: Neumann_BC has {q.shape[0]} entries but the "
+                        f"body has {n_obj} nodes; boundary data must be given "
+                        "per node.")
                 if q.ndim == 2 and q.shape[1] == 3:
                     q = np.einsum("ij,ij->i", q, obj.node_n_hat)
                 q_blocks.append(q)
             if obj.Dirichlet_BC is not None:
-                p_blocks.append(obj.Dirichlet_BC)
+                p = obj.Dirichlet_BC
+                if p.shape[0] != n_obj:
+                    raise ValueError(
+                        f"Body {i}: Dirichlet_BC has {p.shape[0]} entries but "
+                        f"the body has {n_obj} nodes; boundary data must be "
+                        "given per node.")
+                p_blocks.append(p)
 
             node_offset += nodes.shape[0]
 
