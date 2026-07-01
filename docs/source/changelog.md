@@ -33,8 +33,6 @@ on [Keep a Changelog](https://keepachangelog.com/), and the project follows
 ### Fixed
 - Selecting Timoshenko beam theory (`"Timoshenko"` → `"T"`).
 - Circular-import bug in the acoustic subpackage.
-- Namespace-package resolution: removed a stray `__init__.py` from the top-level
-  `sdypy/` folder that broke PEP 420 namespace resolution.
 
 ## [0.1.4] — 2026-01-28
 
