@@ -15,13 +15,9 @@ from sdypy.model import Tetrahedron
 def pad_facets(facets):
     return np.hstack((np.ones((facets.shape[0], 1))*facets.shape[1], facets)).astype(int)
 
-# Load mesh
-try:
-    path_mesh = 'data/Beam - simple.msh'
-    mesh = meshio.read(path_mesh)
-except:
-    path_mesh = 'examples/data/Beam - simple.msh'
-    mesh = meshio.read(path_mesh)
+# Load mesh (resolve the path relative to this script so it runs from any cwd)
+path_mesh = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "Beam - simple.msh")
+mesh = meshio.read(path_mesh)
 
 org = mesh.points
 org_orig = np.copy(org)
