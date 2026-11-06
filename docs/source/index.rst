@@ -6,7 +6,10 @@ Welcome to the SDyPy-model documentation!
    :caption: Contents:
 
    getting_started
+   tutorials/index
    code
+   examples
+   changelog
 
 
 

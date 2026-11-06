@@ -1,0 +1,9 @@
+# Normalize all text files to LF in the repository and on checkout.
+# Prevents CRLF churn when the repo is edited across Windows and Linux/WSL.
+* text=auto eol=lf
+
+# Windows batch files must keep CRLF to run correctly.
+*.bat text eol=crlf
+
+# Binary assets: never touch line endings.
+*.png binary

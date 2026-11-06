@@ -21,7 +21,7 @@ keywords = [
     "lumped mass",
     "FEM",
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.13"
 dependencies = [
     "tqdm>=4.23.4",
     "numpy>=1.14.3",
@@ -38,9 +38,9 @@ classifiers = [
     "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering",
     "License :: OSI Approved :: MIT License",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
 ]
 
 [project.optional-dependencies]
@@ -51,6 +51,7 @@ docs = [
     "sphinx",
     "pydata-sphinx-theme",
     "sphinx-copybutton>=0.5.2",
+    "myst-parser",
 ]
 dev = [
     "sdypy-model[docs]",
@@ -59,6 +60,10 @@ dev = [
     "pytest",
     "build",
     "flake8",
+    "matplotlib",
+]
+examples = [
+    "matplotlib",
 ]
 
 [project.urls]

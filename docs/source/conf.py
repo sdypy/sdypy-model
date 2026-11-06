@@ -27,7 +27,7 @@ author = 'Klemen Zaletelj, Janko Slavič, Domen Gorjup'
 # The short X.Y version
 version = '0.1'
 # The full version, including alpha/beta/rc tags
-release = '0.1.4'
+release = '0.1.5'
 
 
 # -- General configuration ---------------------------------------------------
@@ -41,10 +41,12 @@ release = '0.1.4'
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx.ext.napoleon',  # parse NumPy- and Google-style docstrings
     'sphinx.ext.mathjax',
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
     'sphinx.ext.githubpages',
+    'myst_parser',
     'sphinx_copybutton',
 ]
 
@@ -66,7 +68,7 @@ templates_path = ['_templates']
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
 #
-source_suffix = '.rst'
+source_suffix = {'.rst': 'restructuredtext', '.md': 'markdown'}
 
 # The master toctree document.
 master_doc = 'index'
@@ -187,3 +189,8 @@ epub_title = project
 
 # A list of files that should not be packed into the epub file.
 epub_exclude_files = ['search.html']
+# -- Configuration for MyST parser (markdown in sphinx) ----------------------
+myst_enable_extensions = [
+    "dollarmath",  # LaTeX-style math in Markdown
+    "colon_fence", # block directives using :::
+]
