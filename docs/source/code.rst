@@ -1,9 +1,6 @@
 Code documentation
 ==================
 
-.. TODO: this page is a structural skeleton. Fill each section with
-   ``autoclass`` / ``autofunction`` directives as the docstrings are finalised.
-
 FEM models
 ----------
 
@@ -12,34 +9,38 @@ Beam
 
 Euler–Bernoulli / Timoshenko beam elements.
 
-.. TODO: .. autoclass:: sdypy.model.Beam
+.. autoclass:: sdypy.model.Beam
+   :members:
 
 Shell
 ~~~~~
 
 MITC4 shell elements.
 
-.. TODO: .. autoclass:: sdypy.model.Shell
+.. autoclass:: sdypy.model.Shell
+   :members:
 
 Tetrahedron
 ~~~~~~~~~~~
 
 10-node tetrahedron elements.
 
-.. TODO: .. autoclass:: sdypy.model.Tetrahedron
+.. autoclass:: sdypy.model.Tetrahedron
+   :members:
 
 Eigenvalue solver
 -----------------
 
-.. TODO: .. autofunction:: sdypy.model.solve_eigenvalue
+.. autofunction:: sdypy.model.solve_eigenvalue
 
 Meshing
 -------
 
 Shared 2D/3D mesh helpers.
 
-.. TODO: .. autoclass:: sdypy.model.mesh.Mesh3D
-.. TODO: .. autofunction:: sdypy.model.mesh.generate_quadrilateral_mesh
+.. autoclass:: sdypy.model.mesh.Mesh3D
+   :members:
+.. autofunction:: sdypy.model.mesh.generate_quadrilateral_mesh
 
 Acoustic radiation (external BEM)
 ---------------------------------
@@ -74,20 +75,23 @@ Elements
 
 Boundary-element types (P1 triangles): continuous and discontinuous.
 
-.. TODO: .. autoclass:: sdypy.model.acoustic_external.ContinuousP1Mesh
-.. TODO: .. autoclass:: sdypy.model.acoustic_external.DiscontinuousP1Mesh
+.. autoclass:: sdypy.model.acoustic_external.ContinuousP1Mesh
+   :members:
+.. autoclass:: sdypy.model.acoustic_external.DiscontinuousP1Mesh
+   :members:
 
 Integrators
 ~~~~~~~~~~~
 
-.. TODO: .. autoclass:: sdypy.model.acoustic_external.ElementIntegratorCollocation
+.. autoclass:: sdypy.model.acoustic_external.ElementIntegratorCollocation
+   :members:
 
 Kernels
 ~~~~~~~
 
 Green's function and its derivatives.
 
-.. TODO: .. autofunction:: sdypy.model.acoustic_external.G
+.. autofunction:: sdypy.model.acoustic_external.G
 
 Quadrature
 ~~~~~~~~~~
