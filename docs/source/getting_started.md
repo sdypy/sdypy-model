@@ -71,10 +71,10 @@ length  = np.full(n_elements, 500 / n_elements)   # element lengths [mm]
 density = np.full(n_elements, 7850e-12)           # density [t/mm^3]
 Young   = np.full(n_elements, 180e3)              # Young's modulus [N/mm^2]
 
-# org/conec (node coordinates and connectivity) are auto-generated from n_nodes
-beam = Beam(org=None, conec=None,
+# nodes/elements (node coordinates and connectivity) are auto-generated from n_nodes
+beam = Beam(nodes=None, elements=None,
             length=length, width=30, height=15,   # rectangular cross-section [mm]
-            density=density, Young=Young,
+            density=density, young_modulus=Young,
             n_nodes=n_elements + 1)
 
 nat_freq, modes = beam.solve()                    # natural frequencies [Hz], mode shapes

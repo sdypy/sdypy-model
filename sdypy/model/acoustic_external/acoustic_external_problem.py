@@ -9,8 +9,12 @@ configurable workflow.
 
 from __future__ import annotations
 
+import warnings
+
 import numpy as np
 import pyvista as pv
+
+from .._deprecation import DeprecatedAttribute, reject_both, require
 
 from .geometry import Body, Field
 from .mesh import Mesh
@@ -38,7 +42,7 @@ class AcousticExternalProblem:
     mesh : pv.PolyData
         Triangular surface mesh of the scattering / radiating body.
         Vertex coordinates must be in **metres** [m].
-    rho : float
+    density : float
         Density of the surrounding medium [kg/m³].
     c0 : float
         Speed of sound in the surrounding medium [m/s].
@@ -48,7 +52,7 @@ class AcousticExternalProblem:
         field (which is automatically projected onto the nodal normals).
     boundary_condition_type : str, optional
         ``"Neumann"`` (default) or ``"Dirichlet"``.
-    frequency : float, optional
+    freq : float, optional
         Frequency of the problem [Hz].  Can be set later via
         :meth:`set_frequency`.
     assembler_type : str, optional
@@ -90,41 +94,65 @@ class AcousticExternalProblem:
     >>> # Uniform normal velocity BC
     >>> vn = np.ones(sphere.n_points, dtype=complex)
     >>> prob = AcousticExternalProblem(
-    ...     mesh=sphere, rho=1.225, c0=343.0,
+    ...     mesh=sphere, density=1.225, c0=343.0,
     ...     boundary_condition=vn, boundary_condition_type="Neumann",
-    ...     frequency=500.0,
+    ...     freq=500.0,
     ... )
     >>> phi, q = prob.solve_problem(verbose=False)
     >>> field_pts = np.array([[0.0, 0.0, 2.0]])
     >>> phi_field = prob.evaluate_field(field_pts, verbose=False)
     >>> # acoustic pressure: p = j ω ρ₀ φ
-    >>> p = 1j * 2 * np.pi * prob.frequency * prob.rho * phi_field
+    >>> p = 1j * 2 * np.pi * prob.freq * prob.density * phi_field
     """
+
+    rho = DeprecatedAttribute("density")
+    frequency = DeprecatedAttribute("freq")
 
     def __init__(
         self,
         mesh: pv.PolyData,
-        rho: float,
-        c0: float,
+        density: float | None = None,
+        c0: float | None = None,
         boundary_condition: np.ndarray | None = None,
         boundary_condition_type: str = "Neumann",
-        frequency: float | None = None,
+        freq: float | None = None,
         assembler_type: str = "continuous",
         use_burton_miller: bool = True,
         alpha_bm: complex = 1j,
         quad_order: int = 3,
         near_threshold: float = 2.0,
+        *,
+        rho: float | None = None,
+        frequency: float | None = None,
     ) -> None:
+        if rho is not None:
+            reject_both("rho", "density", density)
+            warnings.warn(
+                "rho is deprecated; use density instead",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            density = rho
+        if frequency is not None:
+            reject_both("frequency", "freq", freq)
+            warnings.warn(
+                "frequency is deprecated; use freq instead",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            freq = frequency
+        require("AcousticExternalProblem", density=density, c0=c0)
+
         # ── Store parameters ──────────────────────────────────────────────────
         self._mesh_pv = mesh
-        self.rho = rho
+        self.density = density
         self.c0 = c0
         self.boundary_condition_type = boundary_condition_type
         self.use_burton_miller = use_burton_miller
         self.alpha_bm = alpha_bm
         self.quad_order = quad_order
         self.near_threshold = near_threshold
-        self._frequency = frequency
+        self._freq = freq
         self._assembler_type = assembler_type
 
         # ── Extract geometry ──────────────────────────────────────────────────
@@ -155,9 +183,9 @@ class AcousticExternalProblem:
             mesh_elements=elements_bem,
             Neumann_BC=Neumann_BC,
             Dirichlet_BC=Dirichlet_BC,
-            frequency=frequency,
+            freq=freq,
         )
-        self.field = Field(rho0=rho, c0=c0)
+        self.field = Field(rho0=density, c0=c0)
         self.bem_mesh = Mesh(
             self.body, peripheral_objects=None, field=self.field
         )
@@ -195,7 +223,8 @@ class AcousticExternalProblem:
 
     # ── Public helpers ────────────────────────────────────────────────────────
 
-    def set_frequency(self, frequency: float) -> None:
+    def set_frequency(self, freq: float | None = None, *,
+                      frequency: float | None = None) -> None:
         """
         Update the problem frequency.
 
@@ -205,16 +234,27 @@ class AcousticExternalProblem:
 
         Parameters
         ----------
-        frequency : float
+        freq : float
             Frequency in Hertz [Hz].
+        frequency : float, optional
+            Deprecated, use ``freq``.
         """
-        self._frequency = frequency
-        omega = 2.0 * np.pi * frequency
+        if frequency is not None:
+            reject_both("frequency", "freq", freq)
+            warnings.warn(
+                "frequency is deprecated; use freq instead",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            freq = frequency
+        require("set_frequency", freq=freq)
+        self._freq = freq
+        omega = 2.0 * np.pi * freq
         k = omega / self.c0
 
         self.bem_mesh.k = k
-        self.bem_mesh.frequency = frequency
-        self.bem_mesh.source_object.frequency = frequency
+        self.bem_mesh.freq = freq
+        self.bem_mesh.source_object.freq = freq
         self.integrator.k = k
 
         self._matrices_assembled = False
@@ -326,7 +366,7 @@ class AcousticExternalProblem:
         Examples
         --------
         >>> phi, q = prob.solve_problem(verbose=False)        # doctest: +SKIP
-        >>> p_surface = 1j * 2 * np.pi * prob.frequency * prob.rho * phi
+        >>> p_surface = 1j * 2 * np.pi * prob.freq * prob.density * phi
         """
         if not self._matrices_assembled:
             if self.use_burton_miller:
@@ -394,7 +434,7 @@ class AcousticExternalProblem:
         np.ndarray
             Complex velocity potential ``φ`` at the query points, shape
             ``(M,)``.  Obtain the acoustic pressure with
-            ``p = 1j * 2 * np.pi * prob.frequency * prob.rho * phi`` [Pa].
+            ``p = 1j * 2 * np.pi * prob.freq * prob.density * phi`` [Pa].
 
         Notes
         -----
@@ -456,9 +496,9 @@ class AcousticExternalProblem:
         return self._q
 
     @property
-    def frequency(self) -> float | None:
+    def freq(self) -> float | None:
         """Current frequency [Hz]."""
-        return self._frequency
+        return self._freq
 
     def __repr__(self) -> str:
         return (

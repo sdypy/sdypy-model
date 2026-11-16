@@ -1,4 +1,6 @@
 
+import warnings
+
 import numpy as np
 
 from scipy.sparse.linalg import eigsh
@@ -7,12 +9,32 @@ from scipy import sparse
 from tqdm.notebook import tqdm
 
 from .mass_tet_basis import mass_tet10
+from .._deprecation import DeprecatedAttribute, reject_both, require
 
 
-def construct_loce(org, conec, n_dof_per_node=3):
+def construct_loce(nodes=None, elements=None, n_dof_per_node=3, *,
+                   org=None, conec=None):
+    """Element-to-DOF location matrix.
+
+    Deprecated parameters
+    ---------------------
+    org : use nodes instead.
+    conec : use elements instead.
+    """
+    if org is not None:
+        reject_both("org", "nodes", nodes)
+        warnings.warn("org is deprecated; use nodes instead",
+                      DeprecationWarning, stacklevel=2)
+        nodes = org
+    if conec is not None:
+        reject_both("conec", "elements", elements)
+        warnings.warn("conec is deprecated; use elements instead",
+                      DeprecationWarning, stacklevel=2)
+        elements = conec
+    require("construct_loce", elements=elements)
     loce = []
-    insert = np.tile(np.arange(n_dof_per_node), conec.shape[1])
-    for element in conec:
+    insert = np.tile(np.arange(n_dof_per_node), elements.shape[1])
+    for element in elements:
         loce.append(np.repeat(element, n_dof_per_node)*n_dof_per_node + insert)
     return np.array(loce)
 
@@ -31,7 +53,28 @@ def _assemble_B_matrix_tet10(N_diff):
         B[:, 5, j*3+2] = N_diff[:, 0, j]
     return B
 
-def H_matrix(E, nu):
+def H_matrix(young_modulus=None, poisson_ratio=None, *, E=None, nu=None):
+    """Constitutive matrix of the isotropic material, one per element.
+
+    Deprecated parameters
+    ---------------------
+    E : use young_modulus instead.
+    nu : use poisson_ratio instead.
+    """
+    if E is not None:
+        reject_both("E", "young_modulus", young_modulus)
+        warnings.warn("E is deprecated; use young_modulus instead",
+                      DeprecationWarning, stacklevel=2)
+        young_modulus = E
+    if nu is not None:
+        reject_both("nu", "poisson_ratio", poisson_ratio)
+        warnings.warn("nu is deprecated; use poisson_ratio instead",
+                      DeprecationWarning, stacklevel=2)
+        poisson_ratio = nu
+    require("H_matrix", young_modulus=young_modulus,
+            poisson_ratio=poisson_ratio)
+    E = young_modulus
+    nu = poisson_ratio
     d1 = E*(1-nu)/((1+nu)*(1-2*nu))
     d2 = nu*E/((1+nu)*(1-2*nu))
     d3 = E/(2*(1+nu))
@@ -51,14 +94,47 @@ def H_matrix(E, nu):
     H[:, 2, 1] = d2
     return H
 
-def Jacobi_det(J):
+def Jacobi_det(jacobian=None, *, J=None):
+    """Determinant of the Jacobian, one per element.
+
+    Deprecated parameters
+    ---------------------
+    J : use jacobian instead.
+    """
+    if J is not None:
+        reject_both("J", "jacobian", jacobian)
+        warnings.warn("J is deprecated; use jacobian instead",
+                      DeprecationWarning, stacklevel=2)
+        jacobian = J
+    require("Jacobi_det", jacobian=jacobian)
+    J = jacobian
     J_det = J[:, 0, 0]*((J[:, 1, 1] * J[:, 2, 2]) - (J[:, 1, 2] * J[:, 2, 1]))\
                 - J[:, 0, 1]*((J[:, 1, 0] * J[:, 2, 2]) - (J[:, 1, 2] * J[:, 2, 0]))\
                 + J[:, 0, 2]*((J[:, 1, 0] * J[:, 2, 1]) -
                               (J[:, 1, 1] * J[:, 2, 0]))
     return J_det
 
-def Jacobi_inv(J, J_det):
+def Jacobi_inv(jacobian=None, jacobian_det=None, *, J=None, J_det=None):
+    """Inverse of the Jacobian, one per element.
+
+    Deprecated parameters
+    ---------------------
+    J : use jacobian instead.
+    J_det : use jacobian_det instead.
+    """
+    if J is not None:
+        reject_both("J", "jacobian", jacobian)
+        warnings.warn("J is deprecated; use jacobian instead",
+                      DeprecationWarning, stacklevel=2)
+        jacobian = J
+    if J_det is not None:
+        reject_both("J_det", "jacobian_det", jacobian_det)
+        warnings.warn("J_det is deprecated; use jacobian_det instead",
+                      DeprecationWarning, stacklevel=2)
+        jacobian_det = J_det
+    require("Jacobi_inv", jacobian=jacobian, jacobian_det=jacobian_det)
+    J = jacobian
+    J_det = jacobian_det
     J_t = np.transpose(J, (0, 2, 1))
     J_inv = np.zeros_like(J)
     J_inv[:, 0, 0] = ((J_t[:, 1, 1] * J_t[:, 2, 2]) -
@@ -82,15 +158,28 @@ def Jacobi_inv(J, J_det):
     return J_inv
 
 class Tetrahedron:
-    def __init__(self, org, conec, young_modulus, density, poisson_ratio, calc_n_freq=20, dof_mask=None, added_masses=None, mass_locations=None, org_rotation=None, lumped=False,
-                 *, Young=None, Density=None, Poisson=None):
+    # Deprecated attribute names (SEP 2); kept through v1.x.
+    org = DeprecatedAttribute("nodes")
+    conec = DeprecatedAttribute("elements")
+    ro = DeprecatedAttribute("density")
+    K = DeprecatedAttribute("stiffness_matrix")
+    M = DeprecatedAttribute("mass_matrix")
+    nat_freq = DeprecatedAttribute("natural_freq")
+    A = DeprecatedAttribute("mode_shape")
+
+    def __init__(self, nodes=None, elements=None, young_modulus=None,
+                 density=None, poisson_ratio=None, calc_n_freq=20,
+                 dof_mask=None, added_masses=None, mass_locations=None,
+                 org_rotation=None, lumped=False,
+                 *, org=None, conec=None, Young=None, Density=None,
+                 Poisson=None):
         """Initialize the tetrahedron model.
 
         Parameters
         ----------
-        org : array_like
+        nodes : array_like
             Nodes.
-        conec : array_like
+        elements : array_like
             Elements.
         young_modulus : array_like
             Stiffnesses of the elements.
@@ -112,11 +201,22 @@ class Tetrahedron:
 
         Deprecated parameters
         ---------------------
+        org : use nodes instead.
+        conec : use elements instead.
         Young : use young_modulus instead.
         Density : use density instead.
         Poisson : use poisson_ratio instead.
         """
-        import warnings
+        if org is not None:
+            reject_both("org", "nodes", nodes)
+            warnings.warn("org is deprecated; use nodes instead",
+                          DeprecationWarning, stacklevel=2)
+            nodes = org
+        if conec is not None:
+            reject_both("conec", "elements", elements)
+            warnings.warn("conec is deprecated; use elements instead",
+                          DeprecationWarning, stacklevel=2)
+            elements = conec
         if Young is not None:
             if young_modulus is not None:
                 raise TypeError(
@@ -154,15 +254,19 @@ class Tetrahedron:
             )
             poisson_ratio = Poisson
 
+        require("Tetrahedron", nodes=nodes, elements=elements,
+                young_modulus=young_modulus, density=density,
+                poisson_ratio=poisson_ratio)
+
         self.n_dof_node = 3
         self.calc_n_freq = calc_n_freq
 
         self.density = density
         self.young_modulus = young_modulus
         self.poisson_ratio = poisson_ratio
-        self.org = org
-        self.conec = conec
-        self.loce = construct_loce(org, conec, self.n_dof_node)
+        self.nodes = nodes
+        self.elements = elements
+        self.loce = construct_loce(nodes, elements, self.n_dof_node)
         self.dof_mask = dof_mask
 
         self.added_masses = added_masses
@@ -171,11 +275,11 @@ class Tetrahedron:
 
         self.m_base = mass_tet10()
         
-        self.n_nodes = self.org.shape[0]  # število vozlišč v mreži
-        self.n_el = self.conec.shape[0]  # število elementov v mreži
+        self.n_nodes = self.nodes.shape[0]  # število vozlišč v mreži
+        self.n_el = self.elements.shape[0]  # število elementov v mreži
         self.n_dof = self.n_dof_node * self.n_nodes  # število prostostnih stopenj
 
-        self.n_dof_element = self.conec.shape[1] * self.n_dof_node
+        self.n_dof_element = self.elements.shape[1] * self.n_dof_node
         self.Jg = np.repeat(self.loce.flatten(), self.n_dof_element)
         self.Ig = np.tile(self.loce, self.n_dof_element).flatten()
         
@@ -185,9 +289,9 @@ class Tetrahedron:
             self.density = np.repeat(self.density, self.n_el)
 
         if lumped:
-            self.K, self.M = self.assemble_matrices_lumped(self.young_modulus, self.density)
+            self.stiffness_matrix, self.mass_matrix = self.assemble_matrices_lumped(self.young_modulus, self.density)
         else:
-            self.K, self.M = self.assemble_matrices(self.young_modulus, self.density)
+            self.stiffness_matrix, self.mass_matrix = self.assemble_matrices(self.young_modulus, self.density)
 
         if self.org_rotation is not None:
             pass
@@ -195,51 +299,53 @@ class Tetrahedron:
         if self.added_masses is not None and self.mass_locations is not None:
             self.add_point_masses()
 
-    @property
-    def ro(self):
-        """Backwards-compatible alias for :attr:`density`.
-
-        Earlier releases stored the element densities on ``self.ro``; the
-        attribute is now ``self.density`` (matching the ``density`` argument and
-        the Beam/Shell elements). ``ro`` is kept as a transparent alias so
-        existing code reading or writing ``obj.ro`` keeps working unchanged.
-        """
-        return self.density
-
-    @ro.setter
-    def ro(self, value):
-        self.density = value
-
     # def add_point_masses(self):
     #     for i, m in zip(self.mass_locations, self.added_masses):
-    #         # self.M[np.ix_(self.loce[i], self.loce[i])][0, 0] += m
+    #         # self.mass_matrix[np.ix_(self.loce[i], self.loce[i])][0, 0] += m
     #         for _ in range(self.loce.shape[1]):
-    #             self.M[self.loce[i][_], self.loce[i][_]] += (m/self.conec.shape[1])
-    #         # self.M[self.loce[i][0], self.loce[i][0]] += m
+    #             self.mass_matrix[self.loce[i][_], self.loce[i][_]] += (m/self.elements.shape[1])
+    #         # self.mass_matrix[self.loce[i][0], self.loce[i][0]] += m
     
     def add_point_masses(self):
         for i, m in zip(self.mass_locations, self.added_masses):
             add_loc = i*3 + np.array([0, 1, 2])
-            self.M[add_loc, add_loc] += m
-                # self.M[np.ix_(add_loc, add_loc)] += np.zeros((3, 3)) * m
+            self.mass_matrix[add_loc, add_loc] += m
+                # self.mass_matrix[np.ix_(add_loc, add_loc)] += np.zeros((3, 3)) * m
 
 
-    def assemble_matrices_lumped(self, E, ro):
+    def assemble_matrices_lumped(self, young_modulus=None, density=None, *, E=None, ro=None):
         """
         Assembling the element matrices into the global mass and stiffness matrix.
         
-        To calculate the derivative of the matrix with respect to rho or E, 
+        To calculate the derivative of the matrix with respect to density or Young's modulus, 
         simply set that parameter to 1. Everything else is calculated the same way.
         
         Parameters
         ----------
-        rho : float or array_like
-            Density of the elements.
-        E : float or array_like
+        young_modulus : float or array_like
             Young's modulus (stiffness) of the elements.
-        n_el : int
-            Number of elements.
+        density : float or array_like
+            Density of the elements.
+
+        Deprecated parameters
+        ---------------------
+        E : use young_modulus instead.
+        ro : use density instead.
         """
+        if E is not None:
+            reject_both("E", "young_modulus", young_modulus)
+            warnings.warn("E is deprecated; use young_modulus instead",
+                          DeprecationWarning, stacklevel=2)
+            young_modulus = E
+        if ro is not None:
+            reject_both("ro", "density", density)
+            warnings.warn("ro is deprecated; use density instead",
+                          DeprecationWarning, stacklevel=2)
+            density = ro
+        require("assemble_matrices", young_modulus=young_modulus,
+                density=density)
+        E = young_modulus
+        ro = density
         Kg = np.zeros((self.n_el * self.n_dof_element**2))
         Mg = np.zeros_like(Kg)
 
@@ -262,7 +368,7 @@ class Tetrahedron:
                                       (lam-eta), -4*xi, 0, 4*zeta, -4*zeta],
                                   [0, 0, 1-4*lam, -1+4*zeta, 0, -4*eta, -4*xi, 4*xi, 4*eta, 4*(lam-zeta)]])
 
-            J = N_diffNat @ self.org[self.conec]
+            J = N_diffNat @ self.nodes[self.elements]
 
             # Jacobi determinant
             J_det = Jacobi_det(J)
@@ -300,21 +406,38 @@ class Tetrahedron:
         return K, M
 
 
-    def assemble_matrices(self, E, ro):
+    def assemble_matrices(self, young_modulus=None, density=None, *, E=None, ro=None):
         """
         Assembling the element matrices into the global mass and stiffness matrix.
         
-        To calculate the derivative of the matrix with respect to rho or E, simply set that parameter to 1. Everything else is calculated the same way.
+        To calculate the derivative of the matrix with respect to density or Young's modulus, simply set that parameter to 1. Everything else is calculated the same way.
         
         Parameters
         ----------
-        rho : float or array_like
-            Density of the elements.
-        E : float or array_like
+        young_modulus : float or array_like
             Young's modulus (stiffness) of the elements.
-        n_el : int
-            Number of elements.
+        density : float or array_like
+            Density of the elements.
+
+        Deprecated parameters
+        ---------------------
+        E : use young_modulus instead.
+        ro : use density instead.
         """
+        if E is not None:
+            reject_both("E", "young_modulus", young_modulus)
+            warnings.warn("E is deprecated; use young_modulus instead",
+                          DeprecationWarning, stacklevel=2)
+            young_modulus = E
+        if ro is not None:
+            reject_both("ro", "density", density)
+            warnings.warn("ro is deprecated; use density instead",
+                          DeprecationWarning, stacklevel=2)
+            density = ro
+        require("assemble_matrices", young_modulus=young_modulus,
+                density=density)
+        E = young_modulus
+        ro = density
         Kg = np.zeros((self.n_el * self.n_dof_element**2))
         Mg = np.zeros_like(Kg)
 
@@ -337,7 +460,7 @@ class Tetrahedron:
                                       (lam-eta), -4*xi, 0, 4*zeta, -4*zeta],
                                   [0, 0, 1-4*lam, -1+4*zeta, 0, -4*eta, -4*xi, 4*xi, 4*eta, 4*(lam-zeta)]])
 
-            J = N_diffNat @ self.org[self.conec]
+            J = N_diffNat @ self.nodes[self.elements]
 
             # Jacobi determinant
             J_det = Jacobi_det(J)
@@ -383,49 +506,68 @@ class Tetrahedron:
         dof_mask : array_like, optional
             Degrees of freedom that are not fixed. If None, the body is free-free.
         """
-        self.eigval, self.eigvec = eigsh(self.K, M=self.M, k=self.calc_n_freq, sigma=0, which='LM')
+        self.eigval, self.eigvec = eigsh(self.stiffness_matrix, M=self.mass_matrix, k=self.calc_n_freq, sigma=0, which='LM')
 
         eig_omega = np.sqrt(self.eigval)
         eig_omega[eig_omega != eig_omega] = 0  # nan element are 0
-        self.nat_freq = eig_omega / (2*np.pi)
-        # self.A = np.array([v.reshape(self.org.shape) for i, v in enumerate(self.eigvec.T)]) # reshape the eigenvectors
+        self.natural_freq = eig_omega / (2*np.pi)
+        # self.mode_shape = np.array([v.reshape(self.nodes.shape) for i, v in enumerate(self.eigvec.T)]) # reshape the eigenvectors
 
         if self.dof_mask is not None:
-            eigvec_full = np.zeros((self.org.flatten().shape[0], self.eigvec.shape[1]))
+            eigvec_full = np.zeros((self.nodes.flatten().shape[0], self.eigvec.shape[1]))
             eigvec_full[self.dof_mask] = self.eigvec
             self.eigvec_full = eigvec_full
         else:
             self.eigvec_full = self.eigvec
 
         try:
-            self.A = self.reshape_eigenvectors(self.eigvec_full, self.org.shape)
+            self.mode_shape = self.reshape_eigenvectors(self.eigvec_full, self.nodes.shape)
         except:
             pass
 
     def reshape_eigenvectors(self, eigvec, shape):
         return np.array([v.reshape(shape) for i, v in enumerate(eigvec.T)])
         
-    def matrix_derivative(self, derivative_E_ind=None, derivative_ro_ind=None, diff_step=1e-5):
+    def matrix_derivative(self, derivative_young_modulus_idx=None,
+                          derivative_density_idx=None, diff_step=1e-5, *,
+                          derivative_E_ind=None, derivative_ro_ind=None):
+        """Finite-difference derivative of the global matrices.
+
+        Deprecated parameters
+        ---------------------
+        derivative_E_ind : use derivative_young_modulus_idx instead.
+        derivative_ro_ind : use derivative_density_idx instead.
+        """
         if derivative_E_ind is not None:
+            reject_both("derivative_E_ind", "derivative_young_modulus_idx", derivative_young_modulus_idx)
+            warnings.warn("derivative_E_ind is deprecated; use derivative_young_modulus_idx instead",
+                          DeprecationWarning, stacklevel=2)
+            derivative_young_modulus_idx = derivative_E_ind
+        if derivative_ro_ind is not None:
+            reject_both("derivative_ro_ind", "derivative_density_idx", derivative_density_idx)
+            warnings.warn("derivative_ro_ind is deprecated; use derivative_density_idx instead",
+                          DeprecationWarning, stacklevel=2)
+            derivative_density_idx = derivative_ro_ind
+        if derivative_young_modulus_idx is not None:
             E = self.young_modulus.copy()
-            step = np.mean(E[derivative_E_ind] * diff_step)
+            step = np.mean(E[derivative_young_modulus_idx] * diff_step)
             
-            E[derivative_E_ind] = E[derivative_E_ind] + step
+            E[derivative_young_modulus_idx] = E[derivative_young_modulus_idx] + step
             
             K_, M_ = self.assemble_matrices(E, self.density)
             
-            self.K_diff = (K_ - self.K) / step
+            self.K_diff = (K_ - self.stiffness_matrix) / step
             self.M_diff = sparse.csc_matrix(self.K_diff.shape)
             
-        elif derivative_ro_ind is not None:
+        elif derivative_density_idx is not None:
             ro = self.density.copy()
-            step = np.mean(ro[derivative_ro_ind] * diff_step)
+            step = np.mean(ro[derivative_density_idx] * diff_step)
             
-            ro[derivative_ro_ind] = ro[derivative_ro_ind] + step
+            ro[derivative_density_idx] = ro[derivative_density_idx] + step
             
             K_, M_ = self.assemble_matrices(self.young_modulus, ro)
             
-            self.M_diff = (M_ - self.M) / step
+            self.M_diff = (M_ - self.mass_matrix) / step
             self.K_diff = sparse.csc_matrix(self.M_diff.shape)
             
     def split_A(self, j, k_pivot=None):
@@ -439,7 +581,7 @@ class Tetrahedron:
         if k_pivot is None:
             k_pivot = np.argmax(np.abs(self.eigvec[:, j]))
             
-        A = (self.K - self.eigval[j]*self.M)
+        A = (self.stiffness_matrix - self.eigval[j]*self.mass_matrix)
 #         A = A.toarray()
 #         A = np.insert(A, k_pivot, 0, axis=0)
 #         A = np.insert(A, k_pivot, 0, axis=1)
@@ -455,26 +597,47 @@ class Tetrahedron:
     def S_eigval(self, j):
         return self.eigvec[:, j] @ (self.K_diff - self.eigval[j]*self.M_diff) @ self.eigvec[:, j]
     
-    def S_matrix(self, eig_ind, derivative_E_ind, compute_vector_sensitivity=True, coor_inds=None, diff_step=1e-5):
+    def S_matrix(self, mode_idx=None, derivative_young_modulus_idx=None,
+                 compute_vector_sensitivity=True, coor_inds=None,
+                 diff_step=1e-5, *, eig_ind=None, derivative_E_ind=None):
+        """Sensitivity of eigenvalues and eigenvectors to Young's modulus.
+
+        Deprecated parameters
+        ---------------------
+        eig_ind : use mode_idx instead.
+        derivative_E_ind : use derivative_young_modulus_idx instead.
+        """
+        if eig_ind is not None:
+            reject_both("eig_ind", "mode_idx", mode_idx)
+            warnings.warn("eig_ind is deprecated; use mode_idx instead",
+                          DeprecationWarning, stacklevel=2)
+            mode_idx = eig_ind
+        if derivative_E_ind is not None:
+            reject_both("derivative_E_ind", "derivative_young_modulus_idx", derivative_young_modulus_idx)
+            warnings.warn("derivative_E_ind is deprecated; use derivative_young_modulus_idx instead",
+                          DeprecationWarning, stacklevel=2)
+            derivative_young_modulus_idx = derivative_E_ind
+        require("S_matrix", mode_idx=mode_idx,
+                derivative_young_modulus_idx=derivative_young_modulus_idx)
         dMs = []
         dKs = []
 
         if coor_inds is not None:
             coor_inds1 = construct_loce(None, np.array([coor_inds]), 3)
 
-        S_mtx_val = np.zeros((len(eig_ind), len(derivative_E_ind)))
-        S_mtx_vec = np.zeros((self.eigvec.shape[0], len(eig_ind), len(derivative_E_ind)))
+        S_mtx_val = np.zeros((len(mode_idx), len(derivative_young_modulus_idx)))
+        S_mtx_vec = np.zeros((self.eigvec.shape[0], len(mode_idx), len(derivative_young_modulus_idx)))
 
-        for i1, j in enumerate(tqdm(eig_ind, leave=False)):
+        for i1, j in enumerate(tqdm(mode_idx, leave=False)):
             if compute_vector_sensitivity:
                 k_pivot = np.argmax(np.abs(self.eigvec[:, j]))
                 lu_A = self.split_A(j, k_pivot)
 
-            for i2, dEi in enumerate(tqdm(derivative_E_ind, leave=False)):
+            for i2, dEi in enumerate(tqdm(derivative_young_modulus_idx, leave=False)):
                 # Assemble derivative matrices
                 if i1 == 0:
-        #             self.assemble_matrices(derivative_E_ind=dEi)
-                    self.matrix_derivative(derivative_E_ind=dEi, diff_step=diff_step)
+        #             self.assemble_matrices(derivative_young_modulus_idx=dEi)
+                    self.matrix_derivative(derivative_young_modulus_idx=dEi, diff_step=diff_step)
                     dMs.append(self.M_diff)
                     dKs.append(self.K_diff)
                 else:
@@ -486,13 +649,13 @@ class Tetrahedron:
 
                 if compute_vector_sensitivity:
                     # Eigenvector sensitivity
-                    f_j = -(self.K_diff - self.eigval[j]*self.M_diff - S_eigval * self.M) @ self.eigvec[:, j]
+                    f_j = -(self.K_diff - self.eigval[j]*self.M_diff - S_eigval * self.mass_matrix) @ self.eigvec[:, j]
                     f_j = np.insert(f_j, k_pivot, 0)
 
                     v_j = lu_A.solve(f_j)
                     v_j = np.delete(v_j, k_pivot)
 
-                    c_j = -self.eigvec[:, j] @ self.M @ v_j - 1/2*self.eigvec[:, j] @ self.M_diff @ self.eigvec[:, j]
+                    c_j = -self.eigvec[:, j] @ self.mass_matrix @ v_j - 1/2*self.eigvec[:, j] @ self.M_diff @ self.eigvec[:, j]
 
                     S_eigvec = v_j + c_j*self.eigvec[:, j]
 
@@ -504,7 +667,7 @@ class Tetrahedron:
             if coor_inds is not None:
                 S_mtx_vec = S_mtx_vec[coor_inds1]
 
-            S_mtx_vec = S_mtx_vec.reshape(-1, len(derivative_E_ind))
+            S_mtx_vec = S_mtx_vec.reshape(-1, len(derivative_young_modulus_idx))
             S_mtx = np.concatenate((S_mtx_val, S_mtx_vec))
 
         else:
@@ -541,13 +704,13 @@ class Tetrahedron:
 
     #             if compute_vector_sensitivity:
     #                 # Eigenvector sensitivity
-    #                 f_j = -(self.K_diff - self.eigval[j]*self.M_diff - S_eigval * self.M) @ self.eigvec[:, j]
+    #                 f_j = -(self.K_diff - self.eigval[j]*self.M_diff - S_eigval * self.mass_matrix) @ self.eigvec[:, j]
     #                 f_j = np.insert(f_j, k_pivot, 0)
 
     #                 v_j = lu_A.solve(f_j)
     #                 v_j = np.delete(v_j, k_pivot)
 
-    #                 c_j = -self.eigvec[:, j] @ self.M @ v_j - 1/2*self.eigvec[:, j] @ self.M_diff @ self.eigvec[:, j]
+    #                 c_j = -self.eigvec[:, j] @ self.mass_matrix @ v_j - 1/2*self.eigvec[:, j] @ self.M_diff @ self.eigvec[:, j]
 
     #                 S_eigvec = v_j + c_j*self.eigvec[:, j]
 

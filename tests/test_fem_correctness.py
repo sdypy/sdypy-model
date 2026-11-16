@@ -50,13 +50,13 @@ class TestBeamFreeFreqAnalytic:
         young = np.ones(n_el) * self.E
 
         beam = model.Beam(
-            org=None, conec=None,
+            nodes=None, elements=None,
             length=length, width=self.w, height=self.h,
             density=density, young_modulus=young,
             n_nodes=n_nodes,
         )
         # solve returns Hz directly (nat_freq = sqrt(eigval) / 2pi)
-        nat_freq, _ = beam.solve(n=10)
+        nat_freq, _ = beam.solve(n_modes=10)
         return beam, nat_freq
 
     def _analytic_f(self, beta_L):
@@ -264,7 +264,7 @@ class TestShellMatrixProperties:
             density=7850.0,
             thickness=0.01,
         )
-        return shell.K, shell.M
+        return shell.stiffness_matrix, shell.mass_matrix
 
     def test_K_symmetric(self, shell_KM):
         K, _ = shell_KM
@@ -354,13 +354,13 @@ class TestTetrahedronMatrixProperties:
         nu = 0.3
 
         tet = model.Tetrahedron(
-            org=org,
-            conec=conec,
+            nodes=org,
+            elements=conec,
             young_modulus=float(E),
             density=float(rho),
             poisson_ratio=nu,
         )
-        return tet.K, tet.M
+        return tet.stiffness_matrix, tet.mass_matrix
 
     def test_K_symmetric(self, tet_KM):
         K, _ = tet_KM

@@ -88,11 +88,11 @@ vn = V0 * np.ones(n_pts, dtype=np.float64)
 
 prob = AcousticExternalProblem(
     mesh=sphere,
-    rho=RHO,
+    density=RHO,
     c0=C0,
     boundary_condition=vn,
     boundary_condition_type="Neumann",
-    frequency=FREQ,
+    freq=FREQ,
     assembler_type=ASSEMBLER_TYPE,
     use_burton_miller=USE_BM,
     quad_order=3,

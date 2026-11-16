@@ -38,8 +38,8 @@ mass_lumping = False
 force_nonsingularity = True
 
 shell_obj = Shell(nodes, elements, E, nu, rho, thickness, verbose=1, mass_lumping=mass_lumping, force_nonsingularity=force_nonsingularity)
-K = shell_obj.K
-M = shell_obj.M
+K = shell_obj.stiffness_matrix
+M = shell_obj.mass_matrix
 
 # Compute the first 20 modes
 eigenvalues, eigenvectors = eigsh(K, M=M, k=20, sigma=0, which='LM')

@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 from .kernels import (r_vec, G, dG_dr, 
                       dG_dn_y, dG_dn_x, 
@@ -6,6 +8,7 @@ from .quadrature import (map_to_physical_triangle_batch,
                          shape_functions_P1)
 
 from .mesh import Mesh
+from .._deprecation import reject_both, require
 
 class ElementIntegratorCollocation:
     """
@@ -30,7 +33,9 @@ class ElementIntegratorCollocation:
                      x: np.ndarray, 
                      y_phys: np.ndarray, 
                      w_phys: np.ndarray, 
-                     N: np.ndarray) -> np.ndarray:
+                     shape_functions: np.ndarray | None = None,
+                     *,
+                     N: np.ndarray | None = None) -> np.ndarray:
         """
         Compute single layer potential integral:
         ∫_T G(x,y) N_j(y) dS_y
@@ -40,14 +45,25 @@ class ElementIntegratorCollocation:
             y_phys: Physical quadrature points on the source triangle, shape 
                 (Q, 3).
             w_phys: Quadrature weights on the source triangle, shape (Q,).
-            N: Shape function values at quadrature points, shape (Q, 3).
+            shape_functions: Shape function values at quadrature points,
+                shape (Q, 3).
+            N: Deprecated, use ``shape_functions``.
 
         Returns:
             Local vector for the triangle, shape (3,).
         """
+        if N is not None:
+            reject_both("N", "shape_functions", shape_functions)
+            warnings.warn(
+                "N is deprecated; use shape_functions instead",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            shape_functions = N
+        require("single_layer", shape_functions=shape_functions)
         r = r_vec(x[None, None, :], y_phys)[1]# = r_norm
         Gv = G(r, self.k)
-        acc =  np.sum((w_phys[:, :, None] * Gv[:, :, None]) * N[None, :, :], 
+        acc =  np.sum((w_phys[:, :, None] * Gv[:, :, None]) * shape_functions[None, :, :], 
                       axis=1)
             
         return acc
@@ -56,8 +72,10 @@ class ElementIntegratorCollocation:
                      x: np.ndarray, 
                      y_phys: np.ndarray, 
                      w_phys: np.ndarray, 
-                     N: np.ndarray, 
-                     n_y: np.ndarray) -> np.ndarray:
+                     shape_functions: np.ndarray | None = None, 
+                     n_y: np.ndarray | None = None,
+                     *,
+                     N: np.ndarray | None = None) -> np.ndarray:
         """
         Compute double layer potential integral:
         ∫_T ∂G(x,y)/∂n_y N_j(y) dS_y
@@ -67,18 +85,29 @@ class ElementIntegratorCollocation:
             y_phys: Physical quadrature points on the source triangle, shape 
                 (Q, 3).
             w_phys: Quadrature weights on the source triangle, shape (Q,).
-            N: Shape function values at quadrature points, shape (Q, 3).
+            shape_functions: Shape function values at quadrature points,
+                shape (Q, 3).
             n_y: Normal vector at source triangle, shape (3,).
+            N: Deprecated, use ``shape_functions``.
 
         Returns:
             Local vector for the triangle, shape (3,).
         """
+        if N is not None:
+            reject_both("N", "shape_functions", shape_functions)
+            warnings.warn(
+                "N is deprecated; use shape_functions instead",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            shape_functions = N
+        require("double_layer", shape_functions=shape_functions, n_y=n_y)
 
         r, rhat = r_vec(x[None, None, :], y_phys)[1:]
         Gv = G(r, self.k)
         dGr = dG_dr(r, Gv, self.k)
         dGdnY = dG_dn_y(rhat, dGr, n_y[:, None, :])
-        acc =  np.sum((w_phys[:, :, None] * dGdnY[:, :, None]) * N[None, :, :], 
+        acc =  np.sum((w_phys[:, :, None] * dGdnY[:, :, None]) * shape_functions[None, :, :], 
                       axis=1)
             
         return acc
@@ -88,7 +117,9 @@ class ElementIntegratorCollocation:
                              x_normal: np.ndarray, 
                              y_phys: np.ndarray, 
                              w_phys: np.ndarray, 
-                             N: np.ndarray) -> np.ndarray:
+                             shape_functions: np.ndarray | None = None,
+                             *,
+                             N: np.ndarray | None = None) -> np.ndarray:
         """
         Compute adjoint double layer potential integral:
         ∫_T ∂G(x,y)/∂n_x N_j(y) dS_y
@@ -99,17 +130,28 @@ class ElementIntegratorCollocation:
             y_phys: Physical quadrature points on the source triangle, shape
                 (Q, 3).
             w_phys: Quadrature weights on the source triangle, shape (Q,).
-            N: Shape function values at quadrature points, shape (Q, 3).
+            shape_functions: Shape function values at quadrature points,
+                shape (Q, 3).
+            N: Deprecated, use ``shape_functions``.
 
         Returns:
             Local vector for the triangle, shape (3,).
         """
+        if N is not None:
+            reject_both("N", "shape_functions", shape_functions)
+            warnings.warn(
+                "N is deprecated; use shape_functions instead",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            shape_functions = N
+        require("adjoint_double_layer", shape_functions=shape_functions)
         r, rhat = r_vec(x[None, None, :], y_phys)[1:]
         Gv = G(r, self.k)
         dGr = dG_dr(r, Gv, self.k)
         nx = np.broadcast_to(x_normal[None, None, :], y_phys.shape)
         dGdnX = dG_dn_x(rhat, dGr, nx)
-        acc =  np.sum((w_phys[:, :, None] * dGdnX[:, :, None]) * N[None, :, :], 
+        acc =  np.sum((w_phys[:, :, None] * dGdnX[:, :, None]) * shape_functions[None, :, :], 
                       axis=1)
             
         return acc
@@ -119,8 +161,10 @@ class ElementIntegratorCollocation:
                             x_normal: np.ndarray, 
                             y_phys: np.ndarray, 
                             w_phys: np.ndarray, 
-                            N: np.ndarray, 
-                            n_y: np.ndarray) -> np.ndarray:
+                            shape_functions: np.ndarray | None = None, 
+                            n_y: np.ndarray | None = None,
+                            *,
+                            N: np.ndarray | None = None) -> np.ndarray:
         """
         Compute adjoint double layer potential integral:
         ∫_T ∂²G(x,y)/(∂n_x∂n_y) N_j(y) dS_y
@@ -130,12 +174,23 @@ class ElementIntegratorCollocation:
             y_phys: Physical quadrature points on the source triangle, shape
                 (Q, 3).
             w_phys: Quadrature weights on the source triangle, shape (Q,).
-            N: Shape function values at quadrature points, shape (Q, 3).
+            shape_functions: Shape function values at quadrature points,
+                shape (Q, 3).
             n_y: Normal vector at source triangle, shape (3,).
+            N: Deprecated, use ``shape_functions``.
 
         Returns:
             Local vector for the triangle, shape (3,).
         """
+        if N is not None:
+            reject_both("N", "shape_functions", shape_functions)
+            warnings.warn(
+                "N is deprecated; use shape_functions instead",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            shape_functions = N
+        require("hypersingular_layer", shape_functions=shape_functions, n_y=n_y)
 
         r, rhat = r_vec(x[None, None, :], y_phys)[1:]
         Gv = G(r, self.k)
@@ -144,7 +199,7 @@ class ElementIntegratorCollocation:
                            n_x=np.broadcast_to(x_normal[None, None, :], 
                                                y_phys.shape),
                            n_y=n_y[:, None, :], G_vals=Gv, k=self.k)
-        acc = np.sum((w_phys[:, :, None] * d2[:, :, None]) * N[None, :, :], 
+        acc = np.sum((w_phys[:, :, None] * d2[:, :, None]) * shape_functions[None, :, :], 
                       axis=1)
             
         return acc

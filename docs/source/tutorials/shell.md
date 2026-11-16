@@ -50,7 +50,7 @@ Real geometries are usually imported from a mesh file rather than built by hand
 
 ## Building the model
 
-Provide the material properties and thickness. Each of `E`, `nu`, `rho` and
+Provide the material properties and thickness. Each of `young_modulus`, `poisson_ratio`, `density` and
 `thickness` may be a single value (applied to every element) or an iterable with
 one value per element:
 
@@ -76,8 +76,8 @@ The constructor assembles the global matrices as SciPy sparse arrays. With 6
 DOFs per node they are `6 * n_nodes` square:
 
 ```python
-shell.K.shape   # -> (1326, 1326) for 221 nodes
-shell.M.shape   # -> (1326, 1326)
+shell.stiffness_matrix.shape   # -> (1326, 1326) for 221 nodes
+shell.mass_matrix.shape   # -> (1326, 1326)
 ```
 
 The DOFs are ordered per node as `[ux, uy, uz, rx, ry, rz]`, so for node `i`
@@ -92,7 +92,7 @@ Using `sigma=0` (shift-invert) returns the lowest-frequency modes:
 import numpy as np
 from scipy.sparse.linalg import eigsh
 
-vals, vecs = eigsh(shell.K, M=shell.M, k=12, sigma=0, which="LM")
+vals, vecs = eigsh(shell.stiffness_matrix, M=shell.mass_matrix, k=12, sigma=0, which="LM")
 
 order = np.argsort(vals)
 vals, vecs = vals[order], vecs[:, order]
@@ -139,8 +139,8 @@ matrices:
   eigenproblem is well posed (recommended; see the note above).
 - **`mass_threshold=<float>`** — zero out mass-matrix entries below the given
   magnitude to sparsify it.
-- **Per-element materials** — pass arrays of length `n_elements` for `E`, `nu`,
-  `rho`, or `thickness` to model spatially varying properties.
+- **Per-element materials** — pass arrays of length `n_elements` for `young_modulus`, `poisson_ratio`,
+  `density`, or `thickness` to model spatially varying properties.
 
 (loading-a-mesh-from-a-file)=
 ## Loading a mesh from a file
@@ -157,7 +157,7 @@ nodes = mesh.points / 1000          # convert mm -> m
 
 elements = np.vstack([cells.data for cells in mesh.cells if cells.type == "quad"])
 
-shell = Shell(nodes, elements, E=2.069e11, nu=0.3, rho=7829,
+shell = Shell(nodes, elements, young_modulus=2.069e11, poisson_ratio=0.3, density=7829,
               thickness=0.001, force_nonsingularity=True)
 ```
 

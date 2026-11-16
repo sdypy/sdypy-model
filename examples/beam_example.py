@@ -22,10 +22,10 @@ density = np.ones(n_elements) * beam_ro
 Young = np.ones(n_elements) * beam_Young
 n_nodes = n_elements + 1
 
-beam_obj = Beam(org=None, conec=None, 
+beam_obj = Beam(nodes=None, elements=None, 
         length=length, width=profile_width, 
         height=profile_height, density=density, 
-        Young=Young, n_nodes=n_nodes, added_masses=None, mass_locations=None)
+        young_modulus=Young, n_nodes=n_nodes, added_masses=None, mass_locations=None)
 
 nat_freq, vec = beam_obj.solve()
 

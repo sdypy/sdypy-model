@@ -1,6 +1,8 @@
 import warnings
 import numpy as np
 
+from .._deprecation import reject_both, require
+
 # ============================================================================
 # PERFORMANCE OPTIMIZATION: Cache Gauss-Legendre quadratures
 # ============================================================================
@@ -371,7 +373,8 @@ def telles_rule(u_star: float,
 # Helper functions
 # ============================================================================
 
-def gauss_legendre_1d(n: int) -> tuple[np.ndarray, np.ndarray]:
+def gauss_legendre_1d(n_points: int | None = None, *,
+                      n: int | None = None) -> tuple[np.ndarray, np.ndarray]:
     """
     Compute the Gauss-Legendre quadrature points and weights on [0, 1].
     
@@ -379,15 +382,27 @@ def gauss_legendre_1d(n: int) -> tuple[np.ndarray, np.ndarray]:
     at module import time.
 
     Args:
-        n (int): Number of quadrature points.
+        n_points (int): Number of quadrature points.
+        n (int): Deprecated, use ``n_points``.
 
     Returns:
-        points (np.ndarray): Array of shape (n,) representing the quadrature 
-            points on [0, 1].
-        weights (np.ndarray): Array of shape (n,) representing the quadrature 
-            weights (sum(weights) = 1).
+        points (np.ndarray): Array of shape (n_points,) representing the
+            quadrature points on [0, 1].
+        weights (np.ndarray): Array of shape (n_points,) representing the
+            quadrature weights (sum(weights) = 1).
     """
-    
+    if n is not None:
+        reject_both("n", "n_points", n_points)
+        warnings.warn(
+            "n is deprecated; use n_points instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        n_points = n
+    if n_points is None:
+        require("gauss_legendre_1d", n_points=n_points)
+    n = n_points
+
     if n < 1:
         raise ValueError("Number of quadrature points must be at least 1.")
     

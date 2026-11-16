@@ -1,12 +1,20 @@
+import warnings
+
 import numpy as np
 
+from .._deprecation import DeprecatedAttribute, reject_both
+
 class Body:
+    frequency = DeprecatedAttribute("freq")
+
     def __init__(self,
                  mesh_nodes: np.ndarray,
                  mesh_elements: np.ndarray,
                  Neumann_BC: np.ndarray | None,
                  Dirichlet_BC: np.ndarray | None,
-                 frequency: float | None = None,):
+                 freq: float | None = None,
+                 *,
+                 frequency: float | None = None):
         """
         Initialize the Body class for acoustic boundary element method.
 
@@ -19,13 +27,22 @@ class Body:
                 representing the Neumann boundary conditions at the mesh nodes.
             Dirichlet_BC (np.ndarray | None): Array of shape (N,) representing
                 the Dirichlet boundary conditions at the mesh nodes.
-            frequency (float | None): Frequency of the acoustic wave in Hz.
+            freq (float | None): Frequency of the acoustic wave in Hz.
+            frequency (float | None): Deprecated, use ``freq``.
         """
+        if frequency is not None:
+            reject_both("frequency", "freq", freq)
+            warnings.warn(
+                "frequency is deprecated; use freq instead",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            freq = frequency
         self.mesh_nodes = mesh_nodes
         self.mesh_elements = mesh_elements
         self.Neumann_BC = Neumann_BC
         self.Dirichlet_BC = Dirichlet_BC
-        self.frequency = frequency
+        self.freq = freq
 
         self.num_nodes = self.mesh_nodes.shape[0]
         self.num_elements = self.mesh_elements.shape[0]

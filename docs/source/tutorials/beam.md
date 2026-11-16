@@ -29,11 +29,11 @@ A beam is described element by element. The relevant inputs are:
 | `length` | array of element lengths, one per element |
 | `width`, `height` | rectangular cross-section dimensions |
 | `density` | array of element densities |
-| `Young` | array of element Young's moduli |
+| `young_modulus` | array of element Young's moduli |
 | `n_nodes` | number of nodes (`n_elements + 1`) |
-| `org`, `conec` | node coordinates and element connectivity |
+| `nodes`, `elements` | node coordinates and element connectivity |
 
-If you pass `org=None, conec=None` together with `n_nodes`, the node coordinates
+If you pass `nodes=None, elements=None` together with `n_nodes`, the node coordinates
 and connectivity are generated automatically for a straight beam — so you only
 need to provide them when modelling a non-trivial topology.
 
@@ -55,21 +55,21 @@ length  = np.full(n_elements, 500 / n_elements)   # element lengths [mm]
 density = np.full(n_elements, 7850e-12)           # density [t/mm^3]
 Young   = np.full(n_elements, 180e3)              # Young's modulus [N/mm^2]
 
-beam = Beam(org=None, conec=None,
+beam = Beam(nodes=None, elements=None,
             length=length, width=30, height=15,   # rectangular cross-section [mm]
-            density=density, Young=Young,
+            density=density, young_modulus=Young,
             n_nodes=n_elements + 1)
 ```
 
-## Node coordinates and connectivity (`org` and `conec`)
+## Node coordinates and connectivity (`nodes` and `elements`)
 
-Passing `org=None, conec=None` lets the constructor generate the node layout for
+Passing `nodes=None, elements=None` lets the constructor generate the node layout for
 you. You can also supply them explicitly — for example to control the node
 numbering or element ordering. The two arguments are:
 
-- **`org`** — a 1-D array of node coordinates along the beam axis. The default
+- **`nodes`** — a 1-D array of node coordinates along the beam axis. The default
   is `np.linspace(0, length.sum(), n_nodes)`.
-- **`conec`** — an `(n_elements, 2)` integer array giving the two node indices
+- **`elements`** — an `(n_elements, 2)` integer array giving the two node indices
   of each element. The default is the sequential chain
   `[[0, 1], [1, 2], ..., [n-1, n]]`.
 
@@ -78,24 +78,24 @@ Setting them by hand (here reproducing the default) looks like this — note tha
 
 ```python
 n_nodes = n_elements + 1
-org   = np.linspace(0, length.sum(), n_nodes)
-conec = np.array([[i, i + 1] for i in range(n_elements)])
+nodes = np.linspace(0, length.sum(), n_nodes)
+elements = np.array([[i, i + 1] for i in range(n_elements)])
 
-beam = Beam(org=org, conec=conec,
+beam = Beam(nodes=nodes, elements=elements,
             length=length, width=30, height=15,
-            density=density, Young=Young,
+            density=density, young_modulus=Young,
             n_nodes=n_nodes)
 ```
 
 ```{warning}
 `sd.model.Beam` models a **straight** beam only. The element matrices depend
 solely on the per-element `length`, and there is **no coordinate transformation**
-that would orient elements in a global frame. Consequently the `org` coordinates
+that would orient elements in a global frame. Consequently the `nodes` coordinates
 do **not** enter the mass/stiffness assembly — changing them does not change the
 result. Geometrically non-straight configurations (angled or curved beams, 2-D/
 3-D frames) therefore cannot be represented with this element; modelling them
 would require per-element rotation matrices that the class does not currently
-provide. Use `conec` to control connectivity and node ordering of a 1-D chain,
+provide. Use `elements` to control connectivity and node ordering of a 1-D chain,
 not to introduce geometric curvature.
 ```
 
@@ -105,8 +105,8 @@ The constructor assembles the global mass and stiffness matrices. Each node
 carries 2 DOFs, so for `n_nodes` nodes the matrices are `2 * n_nodes` square:
 
 ```python
-beam.M.shape   # -> (42, 42) for 21 nodes
-beam.K.shape   # -> (42, 42)
+beam.mass_matrix.shape   # -> (42, 42) for 21 nodes
+beam.stiffness_matrix.shape   # -> (42, 42)
 ```
 
 The DOFs are interleaved per node as `[w_0, θ_0, w_1, θ_1, ...]`, where `w` is
@@ -119,7 +119,7 @@ therefore every other entry (`[::2]`).
 corresponding mode shapes. The number of modes is controlled by `n`:
 
 ```python
-nat_freq, modes = beam.solve(n=10)
+nat_freq, modes = beam.solve(n_modes=10)
 print(np.round(nat_freq[:6], 1))
 # [   0.    0.  295.3  814.1 1596.1 2638.6]
 ```
@@ -137,12 +137,12 @@ are set to 0 and the warning is harmless.
 
 `modes[:, k]` is the `k`-th mode shape over all DOFs; take `modes[::2, k]` for
 the transverse displacements and plot them against the node coordinates
-`beam.org`:
+`beam.nodes`:
 
 ```python
 import matplotlib.pyplot as plt
 
-x = beam.org   # node positions [mm]
+x = beam.nodes   # node positions [mm]
 
 fig, axs = plt.subplots(2, 3, figsize=(10, 5))
 for i, ax in enumerate(axs.flat):
@@ -179,8 +179,8 @@ The example below clamps the left end to model a **cantilever**:
 import numpy as np
 from scipy.linalg import eigh
 
-K = np.asarray(beam.K)
-M = np.asarray(beam.M)
+K = np.asarray(beam.stiffness_matrix)
+M = np.asarray(beam.mass_matrix)
 ndof = beam.n_dof
 
 # Clamp node 0: fix its displacement (DOF 0) and rotation (DOF 1)
@@ -206,7 +206,7 @@ V = V[:, order]
 mode = 0
 full = np.zeros(ndof)
 full[free] = V[:, mode]              # re-insert the fixed DOFs as zeros
-plt.plot(beam.org, full[::2], '-o', ms=3)
+plt.plot(beam.nodes, full[::2], '-o', ms=3)
 plt.axvline(0, color='k', lw=2)      # clamped end
 plt.title(f"Cantilever mode 1 — {freq[mode]:.0f} Hz")
 plt.xlabel("x [mm]")
@@ -221,9 +221,9 @@ plt.show()
 To include shear deformation, build the beam with `mode="T"`:
 
 ```python
-beam_t = Beam(org=None, conec=None,
+beam_t = Beam(nodes=None, elements=None,
               length=length, width=30, height=15,
-              density=density, Young=Young,
+              density=density, young_modulus=Young,
               n_nodes=n_elements + 1,
               mode="T")
 nat_freq_t, _ = beam_t.solve()
@@ -239,9 +239,9 @@ Concentrated masses can be attached at chosen nodes through `added_masses` and
 `mass_locations` (node indices):
 
 ```python
-beam_m = Beam(org=None, conec=None,
+beam_m = Beam(nodes=None, elements=None,
               length=length, width=30, height=15,
-              density=density, Young=Young,
+              density=density, young_modulus=Young,
               n_nodes=n_elements + 1,
               added_masses=[0.5],          # added mass [t]
               mass_locations=[10])         # at node 10 (the mid-span)
@@ -253,7 +253,7 @@ at that node.
 
 ## Non-uniform beams
 
-Because `length`, `density` and `Young` are per-element arrays, stepped or
+Because `length`, `density` and `young_modulus` are per-element arrays, stepped or
 graded beams are described simply by varying those arrays element by element —
 for example a beam whose second half is stiffer:
 
