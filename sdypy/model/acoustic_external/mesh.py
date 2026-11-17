@@ -1,7 +1,10 @@
 import numpy as np
 from .geometry import Body, Field
+from .._deprecation import DeprecatedAttribute
 
 class Mesh:
+    frequency = DeprecatedAttribute("freq")
+
     def __init__(self,
                  source_object: Body,
                  peripheral_objects: list[Body] | None,
@@ -25,7 +28,7 @@ class Mesh:
         Returns:
             None
         """
-        if not source_object.frequency:
+        if not source_object.freq:
             raise ValueError("Source object must have a defined frequency of"\
             " oscillation.")
         if source_object.Neumann_BC is None and \
@@ -37,10 +40,10 @@ class Mesh:
         self.peripheral_objects = peripheral_objects if peripheral_objects else []
         self.field = field
 
-        self.frequency = self.source_object.frequency
+        self.freq = self.source_object.freq
         self.c0 = self.field.c0
         self.rho0 = self.field.rho0
-        self.k = 2.0 * np.pi * self.frequency / self.c0
+        self.k = 2.0 * np.pi * self.freq / self.c0
         
         self.merge()
 

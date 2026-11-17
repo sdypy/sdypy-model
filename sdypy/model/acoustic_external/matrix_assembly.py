@@ -287,7 +287,7 @@ class ContinuousAssembler:
             return self.integrator.single_layer(x = x,
                                                 y_phys = xi_eta,
                                                 w_phys = w,
-                                                N = Nq)
+                                                shape_functions=Nq)
         if operator == "D":
             if n_y is None:
                 raise ValueError("n_y must be provided for double-layer \
@@ -295,14 +295,14 @@ class ContinuousAssembler:
             return self.integrator.double_layer(x = x,
                                                y_phys = xi_eta,
                                                w_phys = w,
-                                               N = Nq,
+                                               shape_functions=Nq,
                                                n_y = n_y)
         if operator == "Kp":
             return self.integrator.adjoint_double_layer(x = x,
                                                        x_normal = n_x,
                                                        y_phys = xi_eta,
                                                        w_phys = w,
-                                                       N = Nq)     
+                                                       shape_functions=Nq)     
         if operator == "N":
             if n_y is None:
                 raise ValueError("n_y must be provided for hypersingular \
@@ -311,7 +311,7 @@ class ContinuousAssembler:
                                                       x_normal = n_x,
                                                       y_phys = xi_eta,
                                                       w_phys = w,
-                                                      N = Nq,
+                                                      shape_functions=Nq,
                                                       n_y = n_y)
         if operator == "NReg":
             return self.integrator.hypersingular_layer_reg(x = x,
@@ -690,22 +690,22 @@ class DiscontinuousAssembler:
         """
         if operator == "S":
             return self.integrator.single_layer(x=x, y_phys=xi_eta,
-                                               w_phys=w, N=Nq)
+                                               w_phys=w, shape_functions=Nq)
         if operator == "D":
             if n_y is None:
                 raise ValueError("n_y required for double-layer operator")
             return self.integrator.double_layer(x=x, y_phys=xi_eta,
-                                               w_phys=w, N=Nq, n_y=n_y)
+                                               w_phys=w, shape_functions=Nq, n_y=n_y)
         if operator == "Kp":
             return self.integrator.adjoint_double_layer(x=x, x_normal=n_x,
                                                        y_phys=xi_eta,
-                                                       w_phys=w, N=Nq)
+                                                       w_phys=w, shape_functions=Nq)
         if operator == "N":
             if n_y is None:
                 raise ValueError("n_y required for hypersingular operator")
             return self.integrator.hypersingular_layer(x=x, x_normal=n_x,
                                                       y_phys=xi_eta,
-                                                      w_phys=w, N=Nq, n_y=n_y)
+                                                      w_phys=w, shape_functions=Nq, n_y=n_y)
         if operator == "NReg":
             return self.integrator.hypersingular_layer_reg(
                 x=x, x_normal=n_x,

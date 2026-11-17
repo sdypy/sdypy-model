@@ -95,10 +95,10 @@ vn = V0 * np.ones(sphere.n_points)
 
 prob = AcousticExternalProblem(
     mesh=sphere,
-    rho=RHO, c0=C0,
+    density=RHO, c0=C0,
     boundary_condition=vn,
     boundary_condition_type="Neumann",
-    frequency=FREQ,
+    freq=FREQ,
     assembler_type="continuous",   # "continuous" | "discontinuous"
     use_burton_miller=False,       # see "Burton–Miller formulation" below
     quad_order=3,
@@ -200,9 +200,9 @@ solution well-conditioned across the whole spectrum. Enable it with:
 
 ```python
 prob = AcousticExternalProblem(
-    mesh=sphere, rho=RHO, c0=C0,
+    mesh=sphere, density=RHO, c0=C0,
     boundary_condition=vn, boundary_condition_type="Neumann",
-    frequency=FREQ,
+    freq=FREQ,
     use_burton_miller=True,     # combined formulation
     alpha_bm=1j,                # coupling parameter (default 1j)
 )

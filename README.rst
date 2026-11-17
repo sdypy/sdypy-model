@@ -26,8 +26,8 @@ Beam elements
 
    beam_obj = sd.model.Beam(...)
 
-   M = beam_obj.M
-   K = beam_obj.K
+   M = beam_obj.mass_matrix
+   K = beam_obj.stiffness_matrix
 
 Shell elements
 --------------
@@ -38,8 +38,8 @@ Shell elements
 
    shell_obj = sd.model.Shell(...)
 
-   M = shell_obj.M
-   K = shell_obj.K
+   M = shell_obj.mass_matrix
+   K = shell_obj.stiffness_matrix
 
 Tetrahedral elements
 --------------------
@@ -50,8 +50,8 @@ Tetrahedral elements
 
    tet_obj = sd.model.Tetrahedron(...)
 
-   M = tet_obj.M
-   K = tet_obj.K
+   M = tet_obj.mass_matrix
+   K = tet_obj.stiffness_matrix
 
 Acoustic radiation (external BEM)
 ---------------------------------
@@ -75,10 +75,10 @@ returns the velocity potential ``φ`` on the boundary, from which the pressure
 
    prob = sd.model.AcousticExternalProblem(
        mesh=sphere,
-       rho=1.225, c0=343.0,                    # air: density [kg/m3], sound speed [m/s]
+       density=1.225, c0=343.0,                    # air: density [kg/m3], sound speed [m/s]
        boundary_condition=vn,                  # (n_points,) scalar, or (n_points, 3) vector
        boundary_condition_type="Neumann",      # "Neumann" (velocity) | "Dirichlet" (pressure)
-       frequency=500.0,                        # [Hz]
+       freq=500.0,                             # [Hz]
        use_burton_miller=False,                # combined (Burton–Miller) formulation, optional
    )
 
@@ -87,7 +87,7 @@ returns the velocity potential ``φ`` on the boundary, from which the pressure
    # Radiated velocity potential at field points of shape (N, 3) [m]
    pts = np.array([[0.3, 0.0, 0.0], [0.0, 0.0, 0.5]])
    phi_field = prob.evaluate_field(pts)        # velocity potential φ
-   p = 1j * 2 * np.pi * prob.frequency * prob.rho * phi_field   # pressure p = jωρφ [Pa]
+   p = 1j * 2 * np.pi * prob.freq * prob.density * phi_field   # pressure p = jωρφ [Pa]
 
 Use ``set_frequency()`` / ``set_boundary_condition()`` to reuse the assembled
 model across a frequency sweep without rebuilding the mesh. All quantities are

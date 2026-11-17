@@ -6,6 +6,8 @@ from tqdm import tqdm
 
 import warnings
 
+from .._deprecation import DeprecatedAttribute, reject_both, require
+
 def get_normal_vector(nodes_el):
     """Based on the nodal coordinates of the element, calculate the normal vector and the
     orthogonal vectors to the normal vector.
@@ -54,18 +56,39 @@ def get_normal_vector(nodes_el):
 
     return Vn, V1, V2
 
-def get_constitutive_tensor(E, nu, k=5/6):
+def get_constitutive_tensor(young_modulus=None, poisson_ratio=None, k=5/6, *,
+                            E=None, nu=None):
     """Get the constitutive tensor of the given material properties.
     
     Parameters
     ----------
-    E : float
+    young_modulus : float
         Young's modulus
-    nu : float
+    poisson_ratio : float
         poisson ratio
     k : float
         shear correction factor
+
+    Deprecated parameters
+    ---------------------
+    E : use young_modulus instead.
+    nu : use poisson_ratio instead.
     """
+    if E is not None:
+        reject_both("E", "young_modulus", young_modulus)
+        warnings.warn("E is deprecated; use young_modulus instead",
+                      DeprecationWarning, stacklevel=2)
+        young_modulus = E
+    if nu is not None:
+        reject_both("nu", "poisson_ratio", poisson_ratio)
+        warnings.warn("nu is deprecated; use poisson_ratio instead",
+                      DeprecationWarning, stacklevel=2)
+        poisson_ratio = nu
+    if young_modulus is None or poisson_ratio is None:
+        require("get_constitutive_tensor", young_modulus=young_modulus,
+                poisson_ratio=poisson_ratio)
+    E = young_modulus
+    nu = poisson_ratio
     D0 = (E / (1 - nu**2)) * np.array([[1, nu, 0, 0, 0, 0],
                                     [nu, 1, 0, 0, 0, 0],
                                     [0, 0, 0, 0, 0, 0],
@@ -229,9 +252,21 @@ def construct_rotational_matrix(V1, V2, Vn):
 
     return T
 
-def lump_mass_matrix(M):
-    lumped_masses = M.sum(axis=1)  # Sum of rows
-    lumped_mass_matrix = diags_array(lumped_masses, shape=M.shape)  # Create diagonal matrix
+def lump_mass_matrix(mass_matrix=None, *, M=None):
+    """Row-sum lumping of a mass matrix.
+
+    Deprecated parameters
+    ---------------------
+    M : use mass_matrix instead.
+    """
+    if M is not None:
+        reject_both("M", "mass_matrix", mass_matrix)
+        warnings.warn("M is deprecated; use mass_matrix instead",
+                      DeprecationWarning, stacklevel=2)
+        mass_matrix = M
+    require("lump_mass_matrix", mass_matrix=mass_matrix)
+    lumped_masses = mass_matrix.sum(axis=1)  # Sum of rows
+    lumped_mass_matrix = diags_array(lumped_masses, shape=mass_matrix.shape)  # Create diagonal matrix
     return lumped_mass_matrix
 
 # %%
@@ -547,6 +582,10 @@ def MITC4_global(nodes, elements, E, nu, rho, thickness, verbose=0, mass_lumping
     return K, M
 
 class Shell:
+    # Deprecated attribute names (SEP 2); kept through v1.x.
+    K = DeprecatedAttribute("stiffness_matrix")
+    M = DeprecatedAttribute("mass_matrix")
+
     def __init__(self, nodes, elements, young_modulus, poisson_ratio, density, thickness, verbose=0,
                  mass_lumping=False, force_nonsingularity=False, mass_threshold=None,
                  *, E=None, nu=None, rho=None):
@@ -921,5 +960,5 @@ class Shell:
         K.eliminate_zeros()
         M.eliminate_zeros()
 
-        self.K = K
-        self.M = M
+        self.stiffness_matrix = K
+        self.mass_matrix = M

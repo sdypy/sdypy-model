@@ -46,9 +46,9 @@ def test_pulsating_sphere_surface_pressure():
     vn = v0 * np.ones(sphere.n_points, dtype=np.float64)
 
     prob = AcousticExternalProblem(
-        mesh=sphere, rho=rho0, c0=c0,
+        mesh=sphere, density=rho0, c0=c0,
         boundary_condition=vn, boundary_condition_type="Neumann",
-        frequency=freq,
+        freq=freq,
         assembler_type="continuous",
         use_burton_miller=True,
     )
@@ -89,9 +89,9 @@ def test_pulsating_sphere_quantitative_accuracy():
     vn = v0 * np.ones(sphere.n_points, dtype=np.float64)
 
     prob = AcousticExternalProblem(
-        mesh=sphere, rho=rho0, c0=c0,
+        mesh=sphere, density=rho0, c0=c0,
         boundary_condition=vn, boundary_condition_type="Neumann",
-        frequency=freq, assembler_type="continuous", use_burton_miller=False,
+        freq=freq, assembler_type="continuous", use_burton_miller=False,
     )
     prob.solve_problem(verbose=False)
 
@@ -117,9 +117,9 @@ def test_set_frequency():
     vn = np.ones(sphere.n_points, dtype=np.float64)
 
     prob = AcousticExternalProblem(
-        mesh=sphere, rho=1.225, c0=343.0,
+        mesh=sphere, density=1.225, c0=343.0,
         boundary_condition=vn, boundary_condition_type="Neumann",
-        frequency=500.0, use_burton_miller=False,
+        freq=500.0, use_burton_miller=False,
     )
 
     # First solve — auto-assembles
@@ -137,9 +137,9 @@ def test_set_boundary_condition():
     vn_init = 0.01 * np.ones(sphere.n_points, dtype=np.float64)
 
     prob = AcousticExternalProblem(
-        mesh=sphere, rho=1.225, c0=343.0,
+        mesh=sphere, density=1.225, c0=343.0,
         boundary_condition=vn_init, boundary_condition_type="Neumann",
-        frequency=500.0,
+        freq=500.0,
     )
 
     # Update with different scalar BC
@@ -166,9 +166,9 @@ def test_evaluate_field():
     vn = 0.01 * np.ones(sphere.n_points, dtype=np.float64)
 
     prob = AcousticExternalProblem(
-        mesh=sphere, rho=1.225, c0=343.0,
+        mesh=sphere, density=1.225, c0=343.0,
         boundary_condition=vn, boundary_condition_type="Neumann",
-        frequency=500.0,
+        freq=500.0,
     )
     prob.solve_problem(verbose=False)
 
@@ -185,9 +185,9 @@ def test_solve_problem_returns_boundary_solution():
     vn = 0.01 * np.ones(sphere.n_points, dtype=np.float64)
 
     prob = AcousticExternalProblem(
-        mesh=sphere, rho=1.225, c0=343.0,
+        mesh=sphere, density=1.225, c0=343.0,
         boundary_condition=vn, boundary_condition_type="Neumann",
-        frequency=500.0, use_burton_miller=False,
+        freq=500.0, use_burton_miller=False,
     )
     result = prob.solve_problem(verbose=False)
 
@@ -204,9 +204,9 @@ def test_precomputed_solution_reuse():
     vn = 0.01 * np.ones(sphere.n_points, dtype=np.float64)
     pts = np.array([[0.3, 0.0, 0.0], [0.0, 0.0, 0.4]])
     kwargs = dict(
-        mesh=sphere, rho=1.225, c0=343.0,
+        mesh=sphere, density=1.225, c0=343.0,
         boundary_condition=vn, boundary_condition_type="Neumann",
-        frequency=500.0, use_burton_miller=False,
+        freq=500.0, use_burton_miller=False,
     )
 
     # Solve on instance A
@@ -230,9 +230,9 @@ def test_evaluate_field_solution_conflict():
     sphere = _small_sphere(0.15)
     vn = 0.01 * np.ones(sphere.n_points, dtype=np.float64)
     prob = AcousticExternalProblem(
-        mesh=sphere, rho=1.225, c0=343.0,
+        mesh=sphere, density=1.225, c0=343.0,
         boundary_condition=vn, boundary_condition_type="Neumann",
-        frequency=500.0, use_burton_miller=False,
+        freq=500.0, use_burton_miller=False,
     )
     phi, q = prob.solve_problem(verbose=False)
     with pytest.raises(ValueError):
@@ -248,9 +248,9 @@ def test_assembler_types():
 
     for atype in ("continuous", "discontinuous"):
         prob = AcousticExternalProblem(
-            mesh=sphere, rho=1.225, c0=343.0,
+            mesh=sphere, density=1.225, c0=343.0,
             boundary_condition=vn, boundary_condition_type="Neumann",
-            frequency=500.0, assembler_type=atype,
+            freq=500.0, assembler_type=atype,
         )
         phi, q = prob.solve_problem(verbose=False)
         assert phi is not None and q is not None
@@ -267,24 +267,24 @@ def test_invalid_parameters():
     # Invalid boundary condition type
     with pytest.raises(ValueError):
         AcousticExternalProblem(
-            mesh=sphere, rho=1.225, c0=343.0,
+            mesh=sphere, density=1.225, c0=343.0,
             boundary_condition=vn, boundary_condition_type="InvalidType",
-            frequency=500.0,
+            freq=500.0,
         )
 
     # Invalid assembler type
     with pytest.raises(ValueError):
         AcousticExternalProblem(
-            mesh=sphere, rho=1.225, c0=343.0,
+            mesh=sphere, density=1.225, c0=343.0,
             boundary_condition=vn, boundary_condition_type="Neumann",
-            frequency=500.0, assembler_type="invalid",
+            freq=500.0, assembler_type="invalid",
         )
 
     # evaluate_field before solve
     prob = AcousticExternalProblem(
-        mesh=sphere, rho=1.225, c0=343.0,
+        mesh=sphere, density=1.225, c0=343.0,
         boundary_condition=vn, boundary_condition_type="Neumann",
-        frequency=500.0,
+        freq=500.0,
     )
     with pytest.raises(RuntimeError):
         prob.evaluate_field(np.array([[0.3, 0.0, 0.0]]), verbose=False)

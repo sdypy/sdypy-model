@@ -1,4 +1,8 @@
+import warnings
+
 import numpy as np
+
+from .._deprecation import reject_both, require
 
 def r_vec(x: np.ndarray, 
           y: np.ndarray) -> np.ndarray:
@@ -45,8 +49,10 @@ def G(r_norm: np.ndarray,
     return np.exp(1j * k * r_norm) / (4 * np.pi * r_norm)
 
 def dG_dr(r_norm: np.ndarray, 
-          G: np.ndarray,
-          k: float) -> np.ndarray:
+          greens_function: np.ndarray | None = None,
+          k: float | None = None,
+          *,
+          G: np.ndarray | None = None) -> np.ndarray:
     """
     Compute the derivative of the Green's function with respect to r.
 
@@ -56,14 +62,26 @@ def dG_dr(r_norm: np.ndarray,
     Args:
         r_norm (np.ndarray): Array of shape (...) representing the distance 
             between source and field points.
-        G (np.ndarray): Array of shape (...) representing the Green's function.
+        greens_function (np.ndarray): Array of shape (...) representing the
+            Green's function.
         k (float): Wavenumber.
+        G (np.ndarray): Deprecated, use ``greens_function``.
 
     Returns:
         dG_dr (np.ndarray): Array of shape (...) representing the derivative 
             of the Green's function with respect to r.
     """
-    return G * (1j * k - 1 / r_norm)
+    if G is not None:
+        reject_both("G", "greens_function", greens_function)
+        warnings.warn(
+            "G is deprecated; use greens_function instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        greens_function = G
+    if greens_function is None or k is None:
+        require("dG_dr", greens_function=greens_function, k=k)
+    return greens_function * (1j * k - 1 / r_norm)
 
 def d2G_dr2(r: np.ndarray, 
             G_vals: np.ndarray, 

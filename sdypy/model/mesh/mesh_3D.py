@@ -28,11 +28,15 @@ for OBJ files).  Use :meth:`to_meters` / :meth:`to_millimeters` to convert.
 
 from __future__ import annotations
 
+import warnings
+
 import numpy as np
 import pyvista as pv
 from scipy.spatial import cKDTree
 from collections import defaultdict
 from typing import Any, Sequence
+
+from .._deprecation import reject_both
 
 
 # ============================================================================
@@ -257,22 +261,24 @@ class Mesh3D:
     def transform(
         self,
         s: float = 1.0,
-        R: np.ndarray | None = None,
+        rotation_matrix: np.ndarray | None = None,
         obj_orig: np.ndarray | None = None,
         obj_mod: np.ndarray | None = None,
         scale_to_mm: float = 1.0,
+        *,
+        R: np.ndarray | None = None,
     ) -> Mesh3D:
         """Return a new mesh with a rigid similarity transform applied.
 
         The transform applied to each vertex is::
 
-            x' = scale_to_mm * (s * R @ (x - obj_orig) + obj_mod)
+            x' = scale_to_mm * (s * rotation_matrix @ (x - obj_orig) + obj_mod)
 
         Parameters
         ----------
         s : float, optional
             Uniform scale factor (default ``1.0``).
-        R : ndarray of shape ``(3, 3)`` or None
+        rotation_matrix : ndarray of shape ``(3, 3)`` or None
             Rotation matrix.  If *None*, identity is used.
         obj_orig : ndarray of shape ``(3,)`` or None
             Origin offset subtracted before rotation.  If *None*, ``(0, 0, 0)``.
@@ -281,12 +287,25 @@ class Mesh3D:
         scale_to_mm : float, optional
             Final unit scaling (default ``1.0``).  Set to ``1000`` to
             convert from metres to millimetres.
+        R : ndarray, optional
+            Deprecated alias of ``rotation_matrix``.
 
         Returns
         -------
         Mesh3D
         """
-        R_mat = np.eye(3) if R is None else np.asarray(R, dtype=float)
+        if R is not None:
+            reject_both("R", "rotation_matrix", rotation_matrix)
+            warnings.warn(
+                "R is deprecated; use rotation_matrix instead",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            rotation_matrix = R
+        R_mat = (
+            np.eye(3) if rotation_matrix is None
+            else np.asarray(rotation_matrix, dtype=float)
+        )
         orig = np.zeros(3) if obj_orig is None else np.asarray(obj_orig, dtype=float)
         mod = np.zeros(3) if obj_mod is None else np.asarray(obj_mod, dtype=float)
 

@@ -56,7 +56,7 @@ parameters = {
 tet_obj = Tetrahedron(org, conec, parameters['Young'], parameters['Density'], parameters['Poisson'], 60)
 
 # Solve the eigenvalue problem
-eigenvalues, eigenvectors = eigsh(tet_obj.K, M=tet_obj.M, k=20, sigma=0, which='LM')
+eigenvalues, eigenvectors = eigsh(tet_obj.stiffness_matrix, M=tet_obj.mass_matrix, k=20, sigma=0, which='LM')
 
 nat_freq = np.sqrt(eigenvalues) / (2 * np.pi)
 

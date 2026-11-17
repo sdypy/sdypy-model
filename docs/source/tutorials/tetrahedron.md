@@ -26,8 +26,8 @@ $$
 
 A solid model needs a volume mesh of 10-node tetrahedra, given as two arrays:
 
-- `org` — an `(n_nodes, 3)` array of nodal coordinates.
-- `conec` — an `(n_elements, 10)` integer array of node indices, ten per
+- `nodes` — an `(n_nodes, 3)` array of nodal coordinates.
+- `elements` — an `(n_elements, 10)` integer array of node indices, ten per
   tetrahedron (four corners followed by the six edge mid-nodes, in the standard
   `tetra10` ordering).
 
@@ -57,9 +57,9 @@ come out in Hz — the same convention as the {doc}`beam tutorial <beam>`.
 
 ## Building the model
 
-Pass the geometry together with the material properties. `Young` and `Density`
+Pass the geometry together with the material properties. `young_modulus` and `density`
 may be a single value (applied to every element) or an array with one value per
-element; `Poisson` is a single value:
+element; `poisson_ratio` is a single value:
 
 ```python
 Young   = 190000.0     # Young's modulus [N/mm^2]
@@ -79,8 +79,8 @@ The constructor assembles the global matrices as SciPy sparse arrays. With 3
 DOFs per node they are `3 * n_nodes` square:
 
 ```python
-tet.K.shape    # -> (5715, 5715) for 1905 nodes
-tet.M.shape    # -> (5715, 5715)
+tet.stiffness_matrix.shape    # -> (5715, 5715) for 1905 nodes
+tet.mass_matrix.shape    # -> (5715, 5715)
 tet.n_dof      # -> 5715
 ```
 
@@ -95,7 +95,7 @@ stores the results on the object:
 ```python
 tet.solve()
 
-print(np.round(tet.nat_freq[:10], 1))
+print(np.round(tet.natural_freq[:10], 1))
 # [   0.    0.    0.    0.    0.    0.  302.7  599.4  831.5 1616.5]
 ```
 
@@ -103,11 +103,11 @@ After solving, the following attributes are available:
 
 | Attribute | Meaning |
 |---|---|
-| `tet.nat_freq` | natural frequencies [Hz], ascending |
+| `tet.natural_freq` | natural frequencies [Hz], ascending |
 | `tet.eigval` | eigenvalues `ω²` |
 | `tet.eigvec` | mode shapes, one per column, over the (free) DOFs |
 | `tet.eigvec_full` | mode shapes mapped back onto **all** DOFs (see boundary conditions) |
-| `tet.A` | mode shapes reshaped to `(n_modes, n_nodes, 3)` — handy for plotting |
+| `tet.mode_shape` | mode shapes reshaped to `(n_modes, n_nodes, 3)` — handy for plotting |
 
 The solid is unconstrained (free–free), so the first **six** modes are
 rigid-body modes (≈ 0 Hz); the elastic modes follow, here the first bending mode
@@ -121,7 +121,7 @@ are set to 0 and the warning is harmless.
 
 ## Plotting mode shapes
 
-`tet.A[k]` is the `k`-th mode shape as an `(n_nodes, 3)` displacement field. The
+`tet.mode_shape[k]` is the `k`-th mode shape as an `(n_nodes, 3)` displacement field. The
 example renders the deformed surface with [PyVista](https://pyvista.org) by
 adding the displacement (scaled for visibility) to the node coordinates and
 colouring by displacement magnitude:
@@ -135,7 +135,7 @@ tris = np.unique(np.vstack([el[i] for el in conec for i in inds]), axis=0)
 faces = np.hstack([np.hstack(([3], t)) for t in tris]).astype(np.int64)
 
 k = 6                                            # first elastic mode
-shape = tet.A[k]                                 # (n_nodes, 3) displacement
+shape = tet.mode_shape[k]                                 # (n_nodes, 3) displacement
 scale = np.linalg.norm(org) / np.linalg.norm(shape) / 12
 mesh = pv.PolyData(org + scale * shape, faces)
 mesh["disp"] = np.linalg.norm(shape, axis=1)
@@ -162,7 +162,7 @@ Unlike `Beam` and `Shell`, the `Tetrahedron` constructor supports constraints
 directly through the **`dof_mask`** argument: a boolean array over all
 `3 * n_nodes` DOFs that is `True` for free DOFs and `False` for fixed ones. The
 matrices are reduced to the free DOFs before solving, and `solve()` scatters the
-mode shapes back onto the full DOF set (`tet.eigvec_full`, `tet.A`) with zeros at
+mode shapes back onto the full DOF set (`tet.eigvec_full`, `tet.mode_shape`) with zeros at
 the constrained DOFs — so plotting works unchanged.
 
 The example below clamps every node on the `x = 0` face to model a
@@ -179,13 +179,13 @@ for n in fixed_nodes:
 tet_c = Tetrahedron(org, conec, Young, Density, Poisson,
                     calc_n_freq=10, dof_mask=dof_mask)
 tet_c.solve()
-print(np.round(tet_c.nat_freq[:4], 1))
+print(np.round(tet_c.natural_freq[:4], 1))
 # [ 47.9  95.4 299.3 588.6]
 ```
 
 With one face clamped there are no rigid-body modes, so the first frequency is
 already the first bending mode (≈ 48 Hz, in good agreement with the analytical
-cantilever beam). To plot, use `tet_c.A[k]` exactly as above — it is already
+cantilever beam). To plot, use `tet_c.mode_shape[k]` exactly as above — it is already
 defined over all nodes, with the clamped face at zero displacement.
 
 ## Adding point masses
@@ -214,7 +214,7 @@ small accuracy cost:
 tet_l = Tetrahedron(org, conec, Young, Density, Poisson,
                     calc_n_freq=10, lumped=True)
 tet_l.solve()
-print(np.round(tet_l.nat_freq[6:10], 1))
+print(np.round(tet_l.natural_freq[6:10], 1))
 # [301.9 597.6 827.6 1608.4]   <- slightly below the consistent-mass result
 ```
 
