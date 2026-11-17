@@ -4,6 +4,13 @@ All notable changes to **sdypy-model** are documented here. The format is based
 on [Keep a Changelog](https://keepachangelog.com/), and the project follows
 [semantic versioning](https://semver.org/).
 
+## [0.3.1] — 2026-11-17
+
+### Fixed
+- `sdypy.model` imports without a Qt binding (installed without the `qt`
+  extra): `pyvistaqt` is imported only when `generate_quadrilateral_mesh`
+  shows the mesh with `show_mesh="pyvista"` (#12).
+
 ## [0.3.0] — 2026-11-17
 
 ### Deprecated
