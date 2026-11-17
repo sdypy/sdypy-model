@@ -4,7 +4,27 @@ All notable changes to **sdypy-model** are documented here. The format is based
 on [Keep a Changelog](https://keepachangelog.com/), and the project follows
 [semantic versioning](https://semver.org/).
 
-## Unreleased
+## [0.3.0] — 2026-11-17
+
+### Deprecated
+- Public names now follow the SEP 2 canonical table. The old names still work
+  and emit `DeprecationWarning`; they will be removed no earlier than v2.0.
+  Positional calls are unchanged.
+  - Parameters and attributes: `org`, `conec` -> `nodes`, `elements`;
+    `K`, `M` -> `stiffness_matrix`, `mass_matrix`; `E`, `Young` ->
+    `young_modulus`; `nu`, `Poisson` -> `poisson_ratio`; `rho`, `ro`,
+    `Density` -> `density`; `nat_freq` -> `natural_freq`; `frequency` ->
+    `freq`; `Beam.solve(n=)` -> `n_modes=`; eigenvector attribute `A` ->
+    `mode_shape`.
+  - Names without a table entry: `I` -> `area_moment`, `A` -> `area` (beam
+    element function), `EI` -> `bending_stiffness`, `J` -> `jacobian`,
+    `J_det` -> `jacobian_det`, `derivative_E_ind` ->
+    `derivative_young_modulus_idx`, `derivative_ro_ind` ->
+    `derivative_density_idx`, `eig_ind` -> `mode_idx`,
+    `Mesh3D.transform(R=)` -> `rotation_matrix=`, `N` -> `shape_functions`,
+    `G` -> `greens_function`, `gauss_legendre_1d(n=)` -> `n_points=`.
+
+## [0.2.0] — 2026-11-06
 
 ### Added
 - **Acoustic radiation via the boundary element method** — new
@@ -29,24 +49,6 @@ on [Keep a Changelog](https://keepachangelog.com/), and the project follows
   re-solving across field evaluations.
 - The `tqdm` progress bar auto-detects the runtime environment
   (notebook vs. terminal).
-
-### Deprecated
-- Public names now follow the SEP 2 canonical table. The old names still work
-  and emit `DeprecationWarning`; they will be removed no earlier than v2.0.
-  Positional calls are unchanged.
-  - Parameters and attributes: `org`, `conec` -> `nodes`, `elements`;
-    `K`, `M` -> `stiffness_matrix`, `mass_matrix`; `E`, `Young` ->
-    `young_modulus`; `nu`, `Poisson` -> `poisson_ratio`; `rho`, `ro`,
-    `Density` -> `density`; `nat_freq` -> `natural_freq`; `frequency` ->
-    `freq`; `Beam.solve(n=)` -> `n_modes=`; eigenvector attribute `A` ->
-    `mode_shape`.
-  - Names without a table entry: `I` -> `area_moment`, `A` -> `area` (beam
-    element function), `EI` -> `bending_stiffness`, `J` -> `jacobian`,
-    `J_det` -> `jacobian_det`, `derivative_E_ind` ->
-    `derivative_young_modulus_idx`, `derivative_ro_ind` ->
-    `derivative_density_idx`, `eig_ind` -> `mode_idx`,
-    `Mesh3D.transform(R=)` -> `rotation_matrix=`, `N` -> `shape_functions`,
-    `G` -> `greens_function`, `gauss_legendre_1d(n=)` -> `n_points=`.
 
 ### Fixed
 - Selecting Timoshenko beam theory (`"Timoshenko"` → `"T"`).
