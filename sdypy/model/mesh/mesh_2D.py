@@ -1,7 +1,6 @@
 import os
 import numpy as np
 import pyvista as pv
-from pyvistaqt import BackgroundPlotter
 
 def generate_quadrilateral_mesh(path_to_step, element_size, path_to_mesh=None, show_mesh="None"):
     """Generate quadrilateral mesh (semi-structured).
@@ -81,6 +80,9 @@ def generate_quadrilateral_mesh(path_to_step, element_size, path_to_mesh=None, s
             faces.append(face)
         faces = np.hstack(faces).astype(np.int64)
         mesh.faces = faces
+
+        # pyvistaqt needs a Qt binding (the `qt` extra), so import it only here
+        from pyvistaqt import BackgroundPlotter
 
         # Visualize the mesh with displacement coloring
         plotter = BackgroundPlotter()
