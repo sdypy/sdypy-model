@@ -12,9 +12,9 @@
 - [x] 2.1 `tests/test_sep2_renames.py`: every old name warns and equals the new one; new names and positional calls do not warn; old and new together raise; missing required arguments raise
 - [x] 2.2 `pytest` with `-W error::DeprecationWarning:sdypy` (no internal use of an old name): 128 passed, 2 skipped
 - [x] 2.3 Hub checkers against this clone: `check_nomenclature.py` and `check_public_api.py` pass
-- [ ] 2.4 CI green on the PR
+- [x] 2.4 CI green on the PR
 
 ## 3. After merge
 
-- [ ] 3.1 Release to PyPI
-- [ ] 3.2 Hub: `tests/test_interop.py` uses `natural_freq`; `public-api` inventory gains the names listed in the proposal
+- [x] 3.1 Release to PyPI (0.3.0)
+- [x] 3.2 Hub: `tests/test_interop.py` uses `natural_freq`; `public-api` inventory gains the names listed in the proposal (sdypy/sdypy#41; the coined names go to the SEP 2 pending-terms ledger instead)
